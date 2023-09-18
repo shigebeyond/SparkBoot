@@ -1,0 +1,9 @@
+# 初始化spark session
+- init_session:
+    app: test
+    master: local[*]
+- read_csv:
+    test:
+        path: /home/shi/code/testing/py-test/src/data/foo.csv
+- query_sql:
+    count: select * from test

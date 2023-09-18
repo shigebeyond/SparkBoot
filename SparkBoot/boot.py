@@ -19,13 +19,34 @@ class Boot(YamlBoot):
         super().__init__()
         # 动作映射函数
         actions = {
+            'init_session': self.init_session,
+            'read_text': self.read_text,
             'read_csv': self.read_csv,
+            'read_json': self.read_json,
+            'read_parquet': self.read_parquet,
+            'read_jdbc': self.read_jdbc,
+            'query_sql': self.query_sql,
         }
         self.add_actions(actions)
 
-        self.spark = SparkSession.builder.getOrCreate()
+        self.spark = None
 
     # --------- 动作处理的函数 --------
+    # 初始化spark session
+    def init_session(self, config):
+        app = config.get('app', 'SparkBoot')
+        builder = SparkSession.builder.appName(app)
+        if 'master' in config:
+            builder.master(config['master'])
+        self.spark = builder.enableHiveSupport().getOrCreate()
+
+    # 读文本数据
+    def read_text(self, config):
+        default_options = {
+            'header': True
+        }
+        self.do_read('text', config, default_options)
+
     # 读csv数据
     def read_csv(self, config):
         default_options = {
@@ -40,6 +61,13 @@ class Boot(YamlBoot):
         }
         self.do_read('json', config, default_options)
 
+    # 读parquet数据
+    def read_parquet(self, config):
+        default_options = {
+            'header': True
+        }
+        self.do_read('parquet', config, default_options)
+
     # 读jdbc数据
     def read_jdbc(self, config):
         default_options = {
@@ -49,20 +77,20 @@ class Boot(YamlBoot):
 
     # 执行读数据
     def do_read(self, type, config, default_options):
-        for table, option in config:
+        for table, option in config.items():
             option = {**default_options, **option}
             # 加载数据到df
             #df = self.spark.read.csv(**option)
-            df = self.spark.read[type](**option)
+            df = getattr(self.spark.read, type)(**option)
             # 转table
             df.createOrReplaceTempView(table)
 
     # 执行sql
     def query_sql(self, config):
-        for table, sql in config:
+        for table, sql in config.items():
             df = self.spark.sql(sql)
             df.createOrReplaceTempView(table)
-
+            df.show()
 
 # cli入口
 def main():
