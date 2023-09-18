@@ -1,0 +1,7 @@
+mysql-connector == 2.2.9
+SQLAlchemy == 1.4.23
+pyutilb >= 1.0.6
+openpyxl == 3.0.7
+matplotlib == 3.4.3
+pyspark >= 3.4.1
+pyarrow >= 12.0.1
