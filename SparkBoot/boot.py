@@ -5,6 +5,7 @@ from pyspark.sql.functions import upper, pandas_udf, expr, col, count, lit, max
 from pyspark.sql import SparkSession, Row, Column, Observation
 from datetime import datetime, date
 import pyspark.pandas as ps
+from pyspark.sql.types import StringType
 from pyutilb import YamlBoot, SparkDfProxy
 from pyutilb.cmd import *
 from pyutilb.file import *
@@ -53,6 +54,10 @@ class Boot(YamlBoot):
         if 'master' in config:
             builder.master(config['master'])
         self.spark = builder.enableHiveSupport().getOrCreate()
+
+    # 注册udf
+    def register_udf(self, func, returnType = StringType()):
+        self.spark.udf.register(func.__name__, func, returnType=returnType)
 
     # 要缓存df
     def cache(self, steps):
