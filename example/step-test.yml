@@ -1,8 +1,16 @@
+- set_vars:
+    env: local
+    #env: cluster
 - debug: true # 遇到df就show()
 # 1 初始化spark session
-- init_session:
-    app: test
-    master: local[*]
+- if(env=='local'):
+  - init_session:
+      app: test
+      master: local[*]
+  else:
+  - init_session:
+      app: test
+      #master: spark://192.168.62.209:7077 # 不需要
 # 2 读mysql
 - read_jdbc:
     user:

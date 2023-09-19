@@ -175,6 +175,19 @@ class Boot(YamlBoot):
             #df.write.csv(**option)
             getattr(df.write, type)(**option)
 
+    # 生成要提交的作业文件+命令
+    def generate_submiting_job(self):
+        # 生成入口文件bootmain.py
+        # 复制udf文件
+        # 复制步骤文件
+        cmd = '''spark-submit bootmain.py \
+    --master local \
+    --driver-memory 2g \
+    --executor-memory 2g \
+    --py-files udf文件
+    --files 步骤文件
+        '''
+
 # cli入口
 def main():
     # 基于yaml的执行器
