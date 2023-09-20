@@ -1,11 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 from shutil import copyfile
-import pandas as pd
-from pyspark.sql.functions import upper, pandas_udf, expr, col, count, lit, max
-from pyspark.sql import SparkSession, Row, Column, Observation
-from datetime import datetime, date
-import pyspark.pandas as ps
+from pyspark.sql import SparkSession, Row, Column
 from pyspark.sql.types import StringType
 from pyutilb import YamlBoot, SparkDfProxy
 from pyutilb.cmd import *
@@ -184,11 +180,12 @@ class Boot(YamlBoot):
             getattr(df.write, type)(**option)
 
     # 生成要提交的作业文件+命令
-    def generate_submiting_job(self, output, step_files, udf_file):
+    def generate_submiting_files(self, output, step_files, udf_file):
         if not os.path.exists(output):
             os.mkdir(output)
-        # 生成入口文件bootmain.py
-
+        # 生成入口文件main.py
+        dir = os.path.dirname(__file__)
+        copyfile(os.path.join(dir, 'main.py'), os.path.join(output, 'main.py'))
         # 复制udf文件
 
         # 复制步骤文件
@@ -199,15 +196,10 @@ class Boot(YamlBoot):
             copyfile(src, os.path.join(output, filename))
 
         # 生成命令
-        cmd = f'''spark-submit bootmain.py \
-    --master local \
-    --driver-memory 2g \
-    --executor-memory 2g \
-    --files {','.join(files)}
-        '''
+        files = ','.join(files)
+        cmd = f"spark-submit main.py {files} --master local --driver-memory 2g --executor-memory 2g --files {files}"
         if udf_file is not None:
-            cmd = f'''{cmd} \
-    --py-files {udf_file}'''
+            cmd = f"{cmd} --py-files {udf_file}"
         print("生成提交命令: " + cmd)
         write_file(os.path.join(output, 'submit.sh'), cmd)
 
@@ -224,7 +216,7 @@ def main():
         raise Exception("Miss step config file or directory")
     # 指定输出目录，则生成作业文件
     if option.output != None:
-        boot.generate_submiting_job(option.output, step_files, option.udf)
+        boot.generate_submiting_files(option.output, step_files, option.udf)
         return
     try:
         # 执行yaml配置的步骤
