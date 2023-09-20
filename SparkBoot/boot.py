@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+from shutil import copyfile
 import pandas as pd
 from pyspark.sql.functions import upper, pandas_udf, expr, col, count, lit, max
 from pyspark.sql import SparkSession, Row, Column, Observation
@@ -45,6 +46,14 @@ class Boot(YamlBoot):
         # 要缓存df
         self.caching = False
 
+    # 记录要注册的udf
+    udfs = []
+
+    # 记录要注册的udf，要延迟注册
+    @classmethod
+    def register_udf(cls, func, returnType = StringType()):
+        cls.udfs.append((func, returnType))
+
     # --------- 动作处理的函数 --------
     # 初始化spark session
     def init_session(self, config):
@@ -54,10 +63,9 @@ class Boot(YamlBoot):
         if 'master' in config:
             builder.master(config['master'])
         self.spark = builder.enableHiveSupport().getOrCreate()
-
-    # 注册udf
-    def register_udf(self, func, returnType = StringType()):
-        self.spark.udf.register(func.__name__, func, returnType=returnType)
+        # 注册udf
+        for func, returnType in self.udfs:
+            self.spark.udf.register(func.__name__, func, returnType=returnType)
 
     # 要缓存df
     def cache(self, steps):
@@ -176,17 +184,32 @@ class Boot(YamlBoot):
             getattr(df.write, type)(**option)
 
     # 生成要提交的作业文件+命令
-    def generate_submiting_job(self):
+    def generate_submiting_job(self, output, step_files, udf_file):
+        if not os.path.exists(output):
+            os.mkdir(output)
         # 生成入口文件bootmain.py
+
         # 复制udf文件
+
         # 复制步骤文件
-        cmd = '''spark-submit bootmain.py \
+        files = []
+        for src in step_files:
+            filename = os.path.basename(src)
+            files.append(filename)
+            copyfile(src, os.path.join(output, filename))
+
+        # 生成命令
+        cmd = f'''spark-submit bootmain.py \
     --master local \
     --driver-memory 2g \
     --executor-memory 2g \
-    --py-files udf文件
-    --files 步骤文件
+    --files {','.join(files)}
         '''
+        if udf_file is not None:
+            cmd = f'''{cmd} \
+    --py-files {udf_file}'''
+        print("生成提交命令: " + cmd)
+        write_file(os.path.join(output, 'submit.sh'), cmd)
 
 # cli入口
 def main():
@@ -199,6 +222,10 @@ def main():
     step_files, option = parse_cmd('SparkBoot', meta['version'])
     if len(step_files) == 0:
         raise Exception("Miss step config file or directory")
+    # 指定输出目录，则生成作业文件
+    if option.output != None:
+        boot.generate_submiting_job(option.output, step_files, option.udf)
+        return
     try:
         # 执行yaml配置的步骤
         boot.run(step_files)
