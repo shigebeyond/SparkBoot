@@ -7,7 +7,7 @@ from pyutilb import YamlBoot, SparkDfProxy
 from pyutilb.cmd import *
 from pyutilb.file import *
 from pyutilb.log import log
-from pyutilb.util import set_var, get_var, replace_var
+from pyutilb.util import *
 
 # spark操作的基于yaml的启动器
 class Boot(YamlBoot):
@@ -52,6 +52,7 @@ class Boot(YamlBoot):
 
     # --------- 动作处理的函数 --------
     # 初始化spark session
+    @replace_var_on_params
     def init_session(self, config):
         # 新建session
         app = config.get('app', 'SparkBoot')
@@ -73,9 +74,9 @@ class Boot(YamlBoot):
 
     # --- 执行sql ---
     # 执行sql
+    @replace_var_on_params
     def query_sql(self, config):
         for table, sql in config.items():
-            sql = replace_var(sql)
             # 查sql
             df = self.spark.sql(sql)
             # 加载df后的处理
@@ -96,6 +97,7 @@ class Boot(YamlBoot):
 
     # --- 读数据 ---
     # 读csv数据
+    @replace_var_on_params
     def read_csv(self, config):
         default_options = {
             'header': True
@@ -103,22 +105,27 @@ class Boot(YamlBoot):
         self.do_read('csv', config, default_options)
 
     # 读json数据
+    @replace_var_on_params
     def read_json(self, config):
         self.do_read('json', config)
 
     # 读orc数据
+    @replace_var_on_params
     def read_orc(self, config):
         self.do_read('orc', config)
 
     # 读parquet数据
+    @replace_var_on_params
     def read_parquet(self, config):
         self.do_read('parquet', config)
 
     # 读文本数据
+    @replace_var_on_params
     def read_text(self, config):
         self.do_read('text', config)
 
     # 读jdbc数据
+    @replace_var_on_params
     def read_jdbc(self, config):
         default_options = {
         }
@@ -139,6 +146,7 @@ class Boot(YamlBoot):
 
     # --- 写数据 ---
     # 写csv数据
+    @replace_var_on_params
     def write_csv(self, config):
         default_options = {
             'header': True
@@ -146,22 +154,27 @@ class Boot(YamlBoot):
         self.do_write('csv', config, default_options)
 
     # 写json数据
+    @replace_var_on_params
     def write_json(self, config):
         self.do_write('json', config)
 
     # 写orc数据
+    @replace_var_on_params
     def write_orc(self, config):
         self.do_write('orc', config)
 
     # 写parquet数据
+    @replace_var_on_params
     def write_parquet(self, config):
         self.do_write('parquet', config)
 
     # 写文本数据
+    @replace_var_on_params
     def write_text(self, config):
         self.do_write('text', config)
 
     # 写jdbc数据
+    @replace_var_on_params
     def write_jdbc(self, config):
         self.do_write('jdbc', config)
 
@@ -183,21 +196,22 @@ class Boot(YamlBoot):
     def generate_submiting_files(self, output, step_files, udf_file):
         if not os.path.exists(output):
             os.mkdir(output)
-        # 生成入口文件main.py
+        # 1 生成入口文件main.py
         dir = os.path.dirname(__file__)
         copyfile(os.path.join(dir, 'main.py'), os.path.join(output, 'main.py'))
-        # 复制udf文件
 
-        # 复制步骤文件
+        # 2 复制udf文件
+
+        # 3 复制步骤文件
         files = []
         for src in step_files:
             filename = os.path.basename(src)
             files.append(filename)
             copyfile(src, os.path.join(output, filename))
 
-        # 生成命令
+        # 4 生成命令
         files = ','.join(files)
-        cmd = f"spark-submit main.py {files} --master local --driver-memory 2g --executor-memory 2g --files {files}"
+        cmd = f"#根据真实环境修正master参数\nspark-submit --master local|yarn|spark://127.0.0.1:7077 --driver-memory 1g --executor-memory 1g --files {files} main.py {files}\n"
         if udf_file is not None:
             cmd = f"{cmd} --py-files {udf_file}"
         print("生成提交命令: " + cmd)

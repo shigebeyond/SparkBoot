@@ -1,3 +1,4 @@
+# 当 spark-submit 时记得修改env为cluster
 - set_vars:
     env: local
     #env: cluster
@@ -7,10 +8,14 @@
   - init_session:
       app: test
       master: local[*]
+    set_vars:
+      outdir: ../data # 输出目录
   else:
   - init_session:
       app: test
-      #master: spark://192.168.62.209:7077 # 不需要
+      #master: spark://192.168.62.209:7077 # 不需要，spark-submit命令会指定
+    set_vars:
+      outdir: /output
 # 2 读mysql
 - read_jdbc:
     user:
@@ -22,16 +27,16 @@
         driver: com.mysql.jdbc.Driver # 需要提前复制好mysql驱动jar，参考pyspark.md
 # 3 写csv
 - write_csv:
-    #user: ../data/user.csv
+    #user: $outdir/user.csv
     user:
-      path: ../data/user.csv
+      path: $outdir/user.csv
       # 模式：append/overwrite/ignore
       mode: overwrite # 覆盖，否则写入报错 PATH_ALREADY_EXISTS
 #      compression: none # 不压缩
 # 4 读csv
 - read_csv:
     user2:
-        path: ../data/user.csv
+        path: $outdir/user.csv
   print: "获得第1行的数据: ${user2[0][name]}"
 # 5 查sql
 - query_sql:
@@ -39,5 +44,5 @@
 # 6 写csv
 - write_csv:
     age_count:
-      path: ../data/age_count.csv
+      path: $outdir/age_count.csv
       mode: overwrite # 覆盖，否则写入报错 PATH_ALREADY_EXISTS
