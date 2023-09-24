@@ -18,6 +18,7 @@ class Boot(YamlBoot):
         actions = {
             'init_session': self.init_session,
             'cache': self.cache,
+            'persist': self.persist,
             'query_sql': self.query_sql,
             # 读动作
             'read_csv': self.read_csv,
@@ -41,6 +42,7 @@ class Boot(YamlBoot):
         self.spark = None
         # 要缓存df
         self.caching = False
+        self.persisting = False
 
     # 记录要注册的udf
     udfs = []
@@ -49,6 +51,10 @@ class Boot(YamlBoot):
     @classmethod
     def register_udf(cls, func, returnType = StringType()):
         cls.udfs.append((func, returnType))
+
+    # 获得表对应的df
+    def get_table_df(self, table):
+        return self.spark.table(table)
 
     # --------- 动作处理的函数 --------
     # 初始化spark session
@@ -72,6 +78,17 @@ class Boot(YamlBoot):
         self.run_steps(steps)
         self.caching = old
 
+    # 要存储df
+    def persist(self, steps):
+        old = self.persisting
+        self.persisting = True
+        # 执行子步骤
+        self.run_steps(steps)
+        self.persisting = old
+
+    def split_and_flat(self, df, col, sep):
+        df.flatMap(lambda row: x.split())
+
     # --- 执行sql ---
     # 执行sql
     @replace_var_on_params
@@ -84,16 +101,22 @@ class Boot(YamlBoot):
 
     # 加载df后的处理
     def on_load_df(self, df, table):
-        # 设为变量
-        set_var(table, SparkDfProxy(df))
         # 转table
         df.createOrReplaceTempView(table)
+        # 获得spark sql中table的df
+        df = self.get_table_df(table)
+        # 设为变量
+        set_var(table, SparkDfProxy(df))
         # 缓存
         if self.caching:
+            # self.spark.sql(f"cache table {table}")
             df.cache()
+        elif self.persisting: # 存储
+            df.persist()
+
         # show
         if self.debug:
-            df.show()
+            df.show(20)
 
     # --- 读数据 ---
     # 读csv数据
@@ -135,7 +158,11 @@ class Boot(YamlBoot):
     def do_read(self, type, config, default_options = None):
         for table, option in config.items():
             if isinstance(option, str): # 路径
-                option = {'path': option}
+                if type == 'text':
+                    key = 'paths'
+                else:
+                    key = 'path'
+                option = {key: option}
             if default_options:
                 option = {**default_options, **option}
             # 加载数据到df

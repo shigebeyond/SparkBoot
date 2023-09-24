@@ -1,0 +1,15 @@
+# 单词统计： https://blog.csdn.net/weixin_46300771/article/details/123364722
+- debug: true # 遇到df就show()
+# 1 初始化spark session
+- init_session:
+    app: test
+    master: local[*]
+  set_vars:
+    outdir: ../data # 输出目录
+# 2 读txt
+- read_text: # 字段是value
+    lines:  ../data/测试数据/words.txt
+# 3 查sql
+- query_sql:
+    words: select explode(split(value," ")) as word from lines
+    word_count: select word, count(1) as cnt from words group by word

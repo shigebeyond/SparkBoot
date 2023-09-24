@@ -1,0 +1,44 @@
+# 订单统计
+# 当 spark-submit 时记得修改env为cluster
+- set_vars:
+    env: local
+    #env: cluster
+- debug: true # 遇到df就show()
+# 初始化spark session
+- init_session:
+    app: test
+    master: local[*]
+  set_vars:
+    outdir: ../data # 输出目录
+# 读json
+- read_json:
+    order: ../data/测试数据/minimini.json
+  print: "获得第1行的数据: ${order[0][storeProvince]}"
+# 1 过滤有效订单
+- cache:
+  - query_sql:
+      my_order: select storeProvince,storeID,receivable,dateTS,payType from order where storeProvince != 'null' and receivable > 1000
+# 2 各省销售额统计
+- query_sql:
+    province_order: select storeProvince, sum(receivable) as money from my_order group by storeProvince order by money desc
+# 3 top3省份
+- query_sql:
+    top3_provinces: select storeProvince from province_order limit 3
+# 4 top3省份的订单
+- persist:
+    - query_sql:
+        top3_province_order: select my_order.* from my_order join top3_provinces where my_order.storeProvince = top3_provinces.storeProvince
+# 5 top3销售省份中，多少店铺达到日销>1000
+- query_sql:
+    top3_province_daily_stores: select storeProvince, storeID, substr(from_unixtime(dateTs, 'yyyy-MM-dd'), 0, 10) as day, sum(receivable) as money from top3_province_order group by storeProvince, storeID, day having money > 1000
+    top3_province_stores: select distinct storeProvince, storeID from top3_province_daily_stores
+# top3销售省份中，各省的订单均价
+- query_sql:
+    top3_provinces: select storeProvince, avg(receivable) as money from top3_province_order group by storeProvince
+# top3销售省份中，各省的支付比例
+- query_sql:
+    top3_provinces: |-
+      select storeProvince, payType, (count(payType)/total) as percent from
+        (select storeProvince, payType, count(1) over(partition by storeProvince) as total from top3_province_order) as t
+        group by storeProvince, payType, total
+
