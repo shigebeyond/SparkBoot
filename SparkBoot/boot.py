@@ -241,8 +241,9 @@ class Boot(YamlBoot):
         cmd = f"#根据真实环境修正master参数\nspark-submit --master local|yarn|spark://127.0.0.1:7077 --driver-memory 1g --executor-memory 1g --files {files} main.py {files}\n"
         if udf_file is not None:
             cmd = f"{cmd} --py-files {udf_file}"
-        print("生成提交命令: " + cmd)
+        #print("生成提交命令: " + cmd)
         write_file(os.path.join(output, 'submit.sh'), cmd)
+        log.info("生成作业文件到目录: " + output)
 
 # cli入口
 def main():

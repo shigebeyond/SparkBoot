@@ -46,7 +46,12 @@ export PATH="$PATH:/home/shi/.local/bin"
 
 ## 使用
 ```
+# 以local模式来执行 步骤配置文件中定义的spark作业
 SparkBoot 步骤配置文件.yml
+
+# 生成spark作业的相关文件，用于cluster/yarn模式中给spark-submit提交作业
+# 生成文件包含: 1 submit.sh spark-submit的提交作业的命令 2 main.py python入口文件 3 步骤配置文件
+SparkBoot 步骤配置文件.yml  -o 作业文件的生成目录
 ```
 
 如执行 `SparkBoot example/test.yml`，输出如下
@@ -90,7 +95,6 @@ only showing top 20 rows
 
 下面详细介绍每个动作:
 
-
 1. print: 打印, 支持输出变量/函数; 
 ```yaml
 # 调试打印
@@ -129,7 +133,7 @@ read_orc:
 ```yaml
 read_parquet:
   # key是表名, value是parquet文件路径
-  line: /data/input/user.parquet
+  user: /data/input/user.parquet
 ```
     
 7. read_text: 读文本数据
