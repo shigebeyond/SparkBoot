@@ -86,8 +86,13 @@ class Boot(YamlBoot):
         self.run_steps(steps)
         self.persisting = old
 
-    def split_and_flat(self, df, col, sep):
-        df.flatMap(lambda row: x.split())
+    # 删除表
+    def drop_table(self, table):
+        self.spark.catalog.dropTempView(table)
+
+    # 列出表
+    def list_tables(self, _):
+        log.debug(self.spark.catalog.listTables())
 
     # --- 执行sql ---
     # 执行sql
