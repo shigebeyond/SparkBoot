@@ -6,7 +6,7 @@
 - debug: true # 遇到df就show()
 # 初始化spark session
 - init_session:
-    app: test
+    app: order-stat
     master: local[*]
   set_vars:
     outdir: ../data # 输出目录

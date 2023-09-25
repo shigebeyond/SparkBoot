@@ -1,15 +1,21 @@
 # 单词统计： https://blog.csdn.net/weixin_46300771/article/details/123364722
 - debug: true # 遇到df就show()
+  set_vars:
+    hdfs_host: ../data
+    #hdfs_host: hdfs://192.168.62.160:9000
 # 1 初始化spark session
 - init_session:
-    app: test
+    app: word-count
     master: local[*]
-  set_vars:
-    outdir: ../data # 输出目录
-# 2 读txt
+# 2 读hdfs
 - read_text: # 字段是value
-    lines:  ../data/测试数据/words.txt
+    lines:  $hdfs_host/input/words.txt
 # 3 查sql
 - query_sql:
     words: select explode(split(value," ")) as word from lines
     word_count: select word, count(1) as cnt from words group by word
+# 4 写hdfs
+- write_json:
+    word_count:
+      path: $hdfs_host/output/word_count.json
+      mode: overwrite

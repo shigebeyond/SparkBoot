@@ -116,6 +116,7 @@ class Boot(YamlBoot):
 
         # show
         if self.debug:
+            df.printSchema()
             df.show(20)
 
     # --- 读数据 ---
