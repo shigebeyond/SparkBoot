@@ -1,0 +1,27 @@
+# 订单统计
+# 当 spark-submit 时记得修改env为cluster
+- set_vars:
+    env: local
+    #env: cluster
+- debug: true # 遇到df就show()
+# 初始化spark session
+- init_session:
+    app: cache-test
+    master: local[*]
+    log_level: info # 日志级别
+# 读json
+- read_json:
+    order: ../data/input/minimini.json
+# 读非缓存
+- print: "-------读非缓存-------"
+- query_sql:
+    test_order: select * from order # 读源文件 minimini.json
+# 1 写缓存
+- print: "-------写缓存-------"
+- cache:
+  - query_sql:
+      my_order: select storeProvince,storeID,receivable,dateTS,payType from order where storeProvince != 'null' and receivable > 1000 # 读源文件 minimini.json
+# 2 读缓存
+- print: "-------读缓存-------"
+- query_sql:
+    test_order2: select * from my_order # 读缓存

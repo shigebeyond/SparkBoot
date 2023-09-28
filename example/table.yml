@@ -1,0 +1,29 @@
+# 测试表的读写
+- set_vars:
+    env: local
+    #env: cluster
+    type: read # read/write
+- debug: true # 遇到df就show()
+# 初始化spark session
+- init_session:
+    app: table-test
+    master: local[*]
+    log_level: error # 日志级别
+    spark.sql.warehouse.dir: ../data/db # 数据仓库目录=表存储目录
+- if(type=='write'): # 测试写
+    # 读json
+    - read_json:
+        order: ../data/input/minimini.json
+    - list_tables:
+    # 写表
+    - write_table:
+        order:
+            #format: hive
+            mode: overwrite # append
+    - list_tables:
+- else: # 测试读
+    - list_tables:
+    # 读表
+    - read_table: order
+    - query_sql:
+          order2: select * from order

@@ -64,6 +64,8 @@ class Boot(YamlBoot):
         # 要缓存df
         self.caching = False
         self.persisting = False
+        # 记录存储的表
+        self.persist_tables = set()
         # 记录stream query
         self.squeries = []
 
@@ -161,6 +163,7 @@ class Boot(YamlBoot):
             df.cache()
         elif self.persisting: # 存储
             df.persist() # 默认是 MEMORY_AND_DISK_DESER
+            self.persist_tables.add(table) # 记录存储的表
         # show
         if self.debug:
             df.explain()
@@ -465,8 +468,16 @@ class Boot(YamlBoot):
 
     # 执行完的后置处理, 要在统计扫尾前调用
     def on_end(self):
+        # stream query等待结束
         for squery in self.squeries:
             squery.awaitTermination()
+        # 取消存储
+        if self.persist_tables:
+            log.debug(f"取消存储: {self.persist_tables}")
+            for table in self.persist_tables:
+                df_proxy = get_var(table)
+                df = df_proxy.df
+                df.unpersist()
 
     # --- 生成作业文件 ---
     # 生成要提交的作业文件+命令

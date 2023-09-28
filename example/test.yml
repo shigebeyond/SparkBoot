@@ -8,6 +8,7 @@
   - init_session:
       app: test
       master: local[*]
+      log_level: error # 日志级别
     set_vars:
       outdir: ../data # 输出目录
   else:

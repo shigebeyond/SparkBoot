@@ -1,0 +1,22 @@
+# 订单统计
+# 当 spark-submit 时记得修改env为cluster
+- set_vars:
+    env: local
+    #env: cluster
+- debug: true # 遇到df就show()
+# 初始化spark session
+- init_session:
+    app: people-stat
+    master: local[*]
+    log_level: error # 日志级别
+# 读cvs
+- read_csv:
+    people:
+      path: ../data/input/sql/people.csv
+      sep: ;
+#      schema: name STRING, age INT, job STRING
+#      header: false # csv文件需配合删除第一行(列头)
+# 执行sql
+- query_sql:
+    people_count: select count(1) as cnt from people # 统计总人数
+    job_count: select job, count(1) as cnt from people group by job # 统计每个工作的人数

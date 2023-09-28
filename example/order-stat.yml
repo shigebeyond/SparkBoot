@@ -8,11 +8,10 @@
 - init_session:
     app: order-stat
     master: local[*]
-  set_vars:
-    outdir: ../data # 输出目录
+    log_level: error # 日志级别
 # 读json
 - read_json:
-    order: ../data/测试数据/minimini.json
+    order: ../data/input/minimini.json
   print: "获得第1行的数据: ${order[0][storeProvince]}"
 # 1 过滤有效订单
 - cache:
@@ -26,8 +25,8 @@
     top3_provinces: select storeProvince from province_order limit 3
 # 4 top3省份的订单
 - persist:
-    - query_sql:
-        top3_province_order: select my_order.* from my_order join top3_provinces where my_order.storeProvince = top3_provinces.storeProvince
+  - query_sql:
+      top3_province_order: select my_order.* from my_order join top3_provinces where my_order.storeProvince = top3_provinces.storeProvince
 # 5 top3销售省份中，多少店铺达到日销>1000
 - query_sql:
     top3_province_daily_stores: select storeProvince, storeID, substr(from_unixtime(dateTs, 'yyyy-MM-dd'), 0, 10) as day, sum(receivable) as money from top3_province_order group by storeProvince, storeID, day having money > 1000

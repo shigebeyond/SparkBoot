@@ -1,0 +1,22 @@
+# 订单统计
+# 当 spark-submit 时记得修改env为cluster
+- set_vars:
+    env: local
+    #env: cluster
+- debug: true # 遇到df就show()
+# 初始化spark session
+- init_session:
+    app: sogouq-stat
+    master: local[*]
+    log_level: error # 日志级别
+# 读json
+- persist:
+  - read_csv:
+      clicks:
+        path: ../data/input/SogouQ.txt
+        sep: \t
+        schema: ts STRING, uid INT, q STRING, url_rank INT, click_order INT, url STRING
+    print: "获得第1行的数据: ${clicks[0][url]}"
+- query_sql:
+    q_count: select q, count(1) as cnt from clicks group by q order by q
+    q_hour_count: select q, window(ts, "60 minute") as hour, count(1) as cnt from clicks group by q, hour order by q

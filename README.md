@@ -107,6 +107,7 @@ print: "总申请数=${dyn_data.total_apply}, 剩余份数=${dyn_data.quantity_r
 - init_session:
     app: test
     master: local[*] # master: 对local仅在本地调试时使用，如果是在集群中运行，则需要删掉本行，并在spark-submit命令中指定master
+    log_level: error # 日志级别
 ```
     
 3. read_csv: 读csv数据
@@ -155,6 +156,20 @@ read_jdbc:
         user: root
         password: root
         driver: com.mysql.jdbc.Driver # 需要提前复制好mysql驱动jar，参考pyspark.md
+```
+    
+8. reads_socket: 读socket流数据
+```yaml
+reads_socket:
+  # key是表名, value是socket server的ip端口
+    user: localhost:9999
+```
+    
+8. reads_kafka: 读kafka流数据
+```yaml
+reads_kafka:
+  # key是表名, value是kafka broker的ip端口
+    user: localhost:9092
 ```
 
 9. query_sql: 执行sql

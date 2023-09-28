@@ -1,0 +1,18 @@
+# 单词统计： https://blog.csdn.net/weixin_46300771/article/details/123364722
+- debug: true # 遇到df就show()
+# 1 初始化spark session
+- init_session:
+    app: word-count
+    master: local[*]
+    log_level: error # 日志级别
+# 2 读socket
+- reads_socket: # 字段是value
+    lines: localhost:9999
+# 3 查sql
+- query_sql:
+    words: select explode(split(value," ")) as word, current_timestamp as ts from lines
+    word_count: select word, window(ts, "1 minute") as minute, count(1) as cnt from words group by word, minute
+# 4 写console
+- writes_console:
+    word_count:
+        outputMode: complete # append/update/complete

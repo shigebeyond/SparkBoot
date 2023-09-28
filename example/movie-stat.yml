@@ -1,0 +1,30 @@
+# 订单统计
+# 当 spark-submit 时记得修改env为cluster
+- set_vars:
+    env: local
+    #env: cluster
+- debug: true # 遇到df就show()
+# 初始化spark session
+- init_session:
+    app: movie-stat
+    master: local[*]
+    log_level: error # 日志级别
+# 读cvs
+- read_csv:
+    movie:
+      path: ../data/input/sql/u.data
+      sep: \t
+      schema: user_id INT, movie_id INT, rank INT, ts STRING
+      header: false
+# 执行sql
+- query_sql:
+    avg_user_rank: select user_id, avg(rank) as avg_rank from movie group by user_id order by avg_rank desc # 统计用户平均分
+    avg_movie_rank: select movie_id, avg(rank) as avg_rank from movie group by movie_id order by avg_rank desc # 统计电影平均分
+- query_sql:
+    top_user: select user_id, count(1) as cnt from movie group by user_id order by cnt desc limit 1 # 打分次数最多的用户
+- query_sql:
+    top_user_avg_rank: select avg(rank) as avg_rank from movie where user_id = ${top_user[0][user_id]} # 打分次数最多的用户的平均分
+- query_sql:
+    job_count: select user_id, avg(rank) as avg_rank, min(rank) as min_rank, max(rank) as max_rank from movie group by user_id # 统计每人的平均分、最低分、最高分
+- query_sql:
+    top10_movie: select movie_id, count(1) as cnt, avg(rank) as avg_rank from movie group by movie_id having cnt > 100 order by avg_rank desc limit 10 # 统计评分次数>100次的电影中的平均分排名前10
