@@ -24,7 +24,7 @@ class Boot(YamlBoot):
             'query_sql': self.query_sql,
             'drop_table': self.drop_table,
             'list_tables': self.list_tables,
-            # 读动作
+            # 读批数据动作
             'read_csv': self.read_csv,
             'read_json': self.read_json,
             'read_orc': self.read_orc,
@@ -32,7 +32,7 @@ class Boot(YamlBoot):
             'read_text': self.read_text,
             'read_jdbc': self.read_jdbc,
             'read_table': self.read_table,
-            # 读流动作
+            # 读流数据动作
             'reads_csv': self.reads_csv,
             'reads_json': self.reads_json,
             'reads_orc': self.reads_orc,
@@ -40,7 +40,8 @@ class Boot(YamlBoot):
             'reads_text': self.reads_text,
             'reads_socket': self.reads_socket,
             'reads_kafka': self.reads_kafka,
-            # 写动作
+            'reads_rate': self.reads_rate,
+            # 写批数据动作
             'write_csv': self.write_csv,
             'write_json': self.write_json,
             'write_orc': self.write_orc,
@@ -48,13 +49,14 @@ class Boot(YamlBoot):
             'write_text': self.write_text,
             'write_jdbc': self.write_jdbc,
             'write_table': self.write_table,
-            # 写流动作
+            # 写流数据动作
             'writes_csv': self.writes_csv,
             'writes_json': self.writes_json,
             'writes_orc': self.writes_orc,
             'writes_parquet': self.writes_parquet,
             'writes_text': self.writes_text,
             'writes_console': self.writes_console,
+            'writes_kafka': self.writes_kafka,
         }
         self.add_actions(actions)
         # 不统计: 因yaml.dump()涉及到spark df就报错
@@ -302,6 +304,21 @@ class Boot(YamlBoot):
             # 加载df后的处理
             self.on_load_df(df, table)
 
+    # 读模拟流数据
+    @replace_var_on_params
+    def reads_rate(self, config):
+        for table, option in config.items():
+            # Create DataFrame representing the stream of input lines from rate
+            # 选项 rowsPerSecond
+            if not isinstance(option, dict):
+                option = {'rowsPerSecond': int(option)}
+            df = self.spark.readStream \
+                .format("rate") \
+                .options(**option) \
+                .load()
+            # 加载df后的处理
+            self.on_load_df(df, table)
+
     # 读kafka流数据
     # https://www.dandelioncloud.cn/article/details/1517520126281904129
     @replace_var_on_params
@@ -310,7 +327,7 @@ class Boot(YamlBoot):
             # Create DataFrame representing the stream of input lines from kafka
             df = self.spark.readStream \
                 .format("kafka") \
-                .option("kafka.bootstrap.servers", get_and_del_dict_item(option, 'broker')) \
+                .option("kafka.bootstrap.servers", get_and_del_dict_item(option, 'brokers')) \
                 .option("subscribe", get_and_del_dict_item(option, 'topic')) \
                 .options(**option) \
                 .load()
@@ -386,7 +403,7 @@ class Boot(YamlBoot):
             # 存为表
             df.write.saveAsTable(table, **option)
 
-    # --- 写流数据 ---
+    # --- 写流数据，选项都有 checkpointLocation ---
     # 写csv流数据
     @replace_var_on_params
     def writes_csv(self, config):
@@ -438,7 +455,7 @@ class Boot(YamlBoot):
             swriter = df.writeStream \
                 .format("kafka") \
                 .outputMode(get_and_del_dict_item(option, 'outputMode')) \
-                .option("kafka.bootstrap.servers", get_and_del_dict_item(option, 'broker')) \
+                .option("kafka.bootstrap.servers", get_and_del_dict_item(option, 'brokers')) \
                 .option("topic", get_and_del_dict_item(option, 'topic')) \
                 .options(**option)
             self.start_swriter(swriter)

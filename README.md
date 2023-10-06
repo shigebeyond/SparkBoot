@@ -96,59 +96,55 @@ only showing top 20 rows
 
 下面详细介绍每个动作:
 
-1. print: 打印, 支持输出变量/函数; 
-```yaml
-# 调试打印
-print: "总申请数=${dyn_data.total_apply}, 剩余份数=${dyn_data.quantity_remain}"
-```
-
-2. init_session: 初始化spark session
+### 1 初始化session的动作
+1. init_session: 初始化spark session
 ```yaml
 - init_session:
     app: test
     master: local[*] # master: 对local仅在本地调试时使用，如果是在集群中运行，则需要删掉本行，并在spark-submit命令中指定master
     log_level: error # 日志级别
 ```
-    
-3. read_csv: 读csv数据
+
+### 2 读批数据的动作
+2. read_csv: 读csv数据
 ```yaml
 read_csv:
   # key是表名, value是csv文件路径
   user: /data/input/user.csv
 ```
-    
-4. read_json: 读json数据
+
+3. read_json: 读json数据
 ```yaml
 read_json:
   # key是表名, value是json文件路径
   user: /data/input/user.json
 ```
-    
-5. read_orc: 读orc数据
+
+4. read_orc: 读orc数据
 ```yaml
 read_orc:
   # key是表名, value是orc文件路径
   user: /data/input/user.orc
 ```
-    
-6. read_parquet: 读parquet数据
+
+5. read_parquet: 读parquet数据
 ```yaml
 read_parquet:
   # key是表名, value是parquet文件路径
   user: /data/input/user.parquet
 ```
-    
-7. read_text: 读文本数据
+
+6. read_text: 读文本数据
 ```yaml
 read_text:
   # key是表名, value是文本文件路径
   lines: /data/input/words.txt
 ```
-    
-8. read_jdbc: 读jdbc数据
+
+7. read_jdbc: 读jdbc数据
 ```yaml
 read_jdbc:
-  # key是表名, value是jdbc连接配置
+    # key是表名, value是jdbc连接配置
     user:
       url: jdbc:mysql://192.168.62.209:3306/test
       table: user
@@ -157,33 +153,92 @@ read_jdbc:
         password: root
         driver: com.mysql.jdbc.Driver # 需要提前复制好mysql驱动jar，参考pyspark.md
 ```
-    
-8. reads_socket: 读socket流数据
+
+8. read_table: 读表数据
 ```yaml
-reads_socket:
-  # key是表名, value是socket server的ip端口
-    user: localhost:9999
-```
-    
-8. reads_kafka: 读kafka流数据
-```yaml
-reads_kafka:
-  # key是表名, value是kafka broker的ip端口
-    user: localhost:9092
+# 接收字典参数
+read_table:
+    # key是新表名, value是旧表名
+    user2: user
+# 接收数组参数
+read_table:
+  - user
 ```
 
-9. query_sql: 执行sql
+### 3 读流数据的动作
+9. reads_rate: 读模拟流数据
+```yaml
+reads_rate:
+    # key是表名, value是参数
+    user:
+      rowsPerSecond: 10 # 每秒产生10行
+```
+
+10. reads_socket: 读socket流数据
+```yaml
+reads_socket:
+    # key是表名, value是socket server的ip端口
+    user: localhost:9999
+```
+
+11. reads_kafka: 读kafka流数据
+```yaml
+reads_kafka:
+    # key是表名, value是kafka brokers+topic
+    user:
+      brokers: localhost:9092 # 多个用逗号分割
+      topic: test
+```
+
+12. reads_csv: 读csv流数据
+```yaml
+reads_csv:
+  # key是表名, value是csv文件路径
+  user: /data/input/user.csv
+```
+
+13. reads_json: 读json流数据
+```yaml
+reads_json:
+  # key是表名, value是json文件路径
+  user: /data/input/user.json
+```
+
+14. reads_orc: 读orc流数据
+```yaml
+reads_orc:
+  # key是表名, value是orc文件路径
+  user: /data/input/user.orc
+```
+
+15. reads_parquet: 读parquet流数据
+```yaml
+reads_parquet:
+  # key是表名, value是parquet文件路径
+  user: /data/input/user.parquet
+```
+
+16. reads_text: 读文本流数据
+```yaml
+reads_text:
+  # key是表名, value是文本文件路径
+  lines: /data/input/words.txt
+```
+
+### 4 执行sql的动作
+17. query_sql: 执行sql
 ```yaml
 - query_sql:
-  # key是表名, value是查询sql
+    # key是表名, value是查询sql
     words: select explode(split(value," ")) as word from lines
     word_count: select word, count(1) as cnt from words group by word
 ```
-    
-10. write_csv: 写csv数据
+
+### 5 写批数据的动作
+18. write_csv: 写csv数据
 ```yaml
 write_csv:
-  # key是表名, value是csv文件路径
+    # key是表名, value是csv文件路径
     user: /data/output/user.csv
 # 或
 write_csv:
@@ -192,39 +247,39 @@ write_csv:
       mode: overwrite # 模式：append/overwrite/ignore
       #compression: none # 不压缩
 ```
-    
-11. write_json: 写json数据
+
+19. write_json: 写json数据
 ```yaml
 write_json:
-  # key是表名, value是json文件路径
+    # key是表名, value是json文件路径
     user: /data/output/user.json
 ```
-    
-12. write_orc: 写orc数据
+
+20. write_orc: 写orc数据
 ```yaml
 write_orc:
-  # key是表名, value是orc文件路径
+    # key是表名, value是orc文件路径
     user: /data/output/user.orc
 ```
-    
-13. write_parquet: 写parquet数据
+
+21. write_parquet: 写parquet数据
 ```yaml
 write_parquet:
-  # key是表名, value是parquet文件路径
+    # key是表名, value是parquet文件路径
     user: /data/output/user.parquet
 ```
-    
-14. write_text: 写文本数据
+
+22. write_text: 写文本数据
 ```yaml
 write_text:
-  # key是表名, value是文本文件路径
+    # key是表名, value是文本文件路径
     user: /data/output/user.txt
 ```
-    
-15. write_jdbc: 写jdbc数据
+
+23. write_jdbc: 写jdbc数据
 ```yaml
 write_jdbc:
-  # key是表名, value是jdbc连接配置
+    # key是表名, value是jdbc连接配置
     user:
       url: jdbc:mysql://192.168.62.209:3306/test
       table: user
@@ -234,8 +289,87 @@ write_jdbc:
         driver: com.mysql.jdbc.Driver # 需要提前复制好mysql驱动jar，参考pyspark.md
 ```
 
-16. for: 循环; 
-for动作下包含一系列子步骤，表示循环执行这系列子步骤；变量`for_i`记录是第几次迭代（从1开始）,变量`for_v`记录是每次迭代的元素值（仅当是list类型的变量迭代时有效）
+### 6 写流数据的动作
+24. writes_console: 将流数据写到控制台
+```yaml
+writes_console:
+  # key是表名, value是参数
+  user:
+    checkpointLocation: path/to/checkpoint/dir
+    outputMode: complete # append/update/complete
+```
+25. writes_kafka: 写kafka流数据
+```yaml
+writes_kafka:
+  # key是表名, value是kafka brokers+topic
+  user:
+    brokers: localhost:9092 # 多个用逗号分割
+    topic: test
+    checkpointLocation: path/to/checkpoint/dir
+    outputMode: complete # append/update/complete
+```
+
+26. writes_csv: 写csv数据
+```yaml
+writes_csv:
+    # key是表名, value是文本文件路径
+    user:
+      path: /data/output/user.csv
+      mode: overwrite # 模式：append/overwrite/ignore
+      #compression: none # 不压缩
+      checkpointLocation: path/to/checkpoint/dir
+      outputMode: complete # append/update/complete
+```
+
+27. writes_json: 写json数据
+```yaml
+writes_json:
+    # key是表名, value是json文件路径
+    user: 
+      path: /data/output/user.json
+      checkpointLocation: path/to/checkpoint/dir
+      outputMode: complete # append/update/complete
+```
+
+28. writes_orc: 写orc数据
+```yaml
+writes_orc:
+    # key是表名, value是orc文件路径
+    user: 
+      path: /data/output/user.orc
+      checkpointLocation: path/to/checkpoint/dir
+      outputMode: complete # append/update/complete
+```
+
+29. writes_parquet: 写parquet数据
+```yaml
+writes_parquet:
+    # key是表名, value是parquet文件路径
+    user: 
+      path: /data/output/user.parquet
+      checkpointLocation: path/to/checkpoint/dir
+      outputMode: complete # append/update/complete
+```
+
+30. writes_text: 写文本数据
+```yaml
+writes_text:
+  # key是表名, value是文本文件路径
+    user: 
+      path: /data/output/user.txt
+      checkpointLocation: path/to/checkpoint/dir
+      outputMode: complete # append/update/complete
+```
+
+### 7 其他动作
+31. print: 打印, 支持输出变量/函数;
+```yaml
+# 调试打印
+print: "总申请数=${dyn_data.total_apply}, 剩余份数=${dyn_data.quantity_remain}"
+```
+
+32. for: 循环;
+    for动作下包含一系列子步骤，表示循环执行这系列子步骤；变量`for_i`记录是第几次迭代（从1开始）,变量`for_v`记录是每次迭代的元素值（仅当是list类型的变量迭代时有效）
 ```yaml
 # 循环3次
 for(3) :
@@ -255,8 +389,8 @@ for:
     switch_sheet: test
 ```
 
-17. once: 只执行一次，等价于 `for(1)`; 
-once 结合 moveon_if，可以模拟 python 的 `if` 语法效果
+33. once: 只执行一次，等价于 `for(1)`;
+    once 结合 moveon_if，可以模拟 python 的 `if` 语法效果
 ```yaml
 once:
   # 每次迭代要执行的子步骤
@@ -264,19 +398,19 @@ once:
     switch_sheet: test
 ```
 
-18. break_if: 满足条件则跳出循环; 
-只能定义在for/once循环的子步骤中
+34. break_if: 满足条件则跳出循环;
+    只能定义在for/once循环的子步骤中
 ```yaml
 break_if: for_i>2 # 条件表达式，python语法
 ```
 
-19. moveon_if: 满足条件则往下走，否则跳出循环; 
-只能定义在for/once循环的子步骤中
+35. moveon_if: 满足条件则往下走，否则跳出循环;
+    只能定义在for/once循环的子步骤中
 ```yaml
 moveon_if: for_i<=2 # 条件表达式，python语法
 ```
 
-20. if/else: 满足条件则执行if分支，否则执行else分支
+36. if/else: 满足条件则执行if分支，否则执行else分支
 ```yaml
 - set_vars:
     txt: '进入首页'
@@ -286,12 +420,12 @@ moveon_if: for_i<=2 # 条件表达式，python语法
     - print: '----- 执行else -----'
 ```
 
-21. include: 包含其他步骤文件，如记录公共的步骤，或记录配置数据(如用户名密码); 
+37. include: 包含其他步骤文件，如记录公共的步骤，或记录配置数据(如用户名密码);
 ```yaml
 include: part-common.yml
 ```
 
-22. set_vars: 设置变量; 
+38. set_vars: 设置变量;
 ```yaml
 set_vars:
   name: shi
@@ -299,7 +433,7 @@ set_vars:
   birthday: 5-27
 ```
 
-23. print_vars: 打印所有变量; 
+39. print_vars: 打印所有变量;
 ```yaml
 print_vars:
 ```
