@@ -24,4 +24,4 @@
       clickhouse.username: my_username
       clickhouse.password: my_passwor
       # 模式：append/overwrite/ignore
-      outputMode: overwrite # 覆盖，否则写入报错 PATH_ALREADY_EXISTS
+      mode: append # 覆盖，否则写入报错 PATH_ALREADY_EXISTS

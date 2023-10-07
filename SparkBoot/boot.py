@@ -382,9 +382,9 @@ class Boot(YamlBoot):
             #df.write.csv(**option)
             if is_stream:
                 write = df.writeStream
+                outputMode = get_and_del_dict_item(option, 'outputMode')
             else:
                 write = df.write
-            outputMode = get_and_del_dict_item(option, 'outputMode')
             # 方法调用，如 csv/json/orc/parquet/text/jdbc
             # 参考 /home/shi/.local/lib/python3.7/site-packages/pyspark/sql/streaming/readwriter.py
             writer = getattr(write, type)(**option)
@@ -417,9 +417,10 @@ class Boot(YamlBoot):
             # 输出df
             if is_stream:
                 write = df.writeStream
+                outputMode = get_and_del_dict_item(option, 'outputMode')
             else:
                 write = df.write
-            outputMode = get_and_del_dict_item(option, 'outputMode')
+                outputMode = get_and_del_dict_item(option, 'mode')
             writer = write.format(format) \
                 .options(option)
             if is_stream: # 流处理
