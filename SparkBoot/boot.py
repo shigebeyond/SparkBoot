@@ -341,35 +341,35 @@ class Boot(YamlBoot):
         default_options = {
             'header': True
         }
-        self.do_write('csv', False, config, default_options)
+        self.do_write_method('csv', False, config, default_options)
 
     # 写json数据
     @replace_var_on_params
     def write_json(self, config):
-        self.do_write('json', False, config)
+        self.do_write_method('json', False, config)
 
     # 写orc数据
     @replace_var_on_params
     def write_orc(self, config):
-        self.do_write('orc', False, config)
+        self.do_write_method('orc', False, config)
 
     # 写parquet数据
     @replace_var_on_params
     def write_parquet(self, config):
-        self.do_write('parquet', False, config)
+        self.do_write_method('parquet', False, config)
 
     # 写文本数据
     @replace_var_on_params
     def write_text(self, config):
-        self.do_write('text', False, config)
+        self.do_write_method('text', False, config)
 
     # 写jdbc数据
     @replace_var_on_params
     def write_jdbc(self, config):
-        self.do_write('jdbc', False, config)
+        self.do_write_method('jdbc', False, config)
 
-    # 执行写数据
-    def do_write(self, type, is_stream, config, default_options = None):
+    # 执行写数据的方法
+    def do_write_method(self, type, is_stream, config, default_options = None):
         for table, option in config.items():
             if isinstance(option, str): # 路径
                 option = {'path': option}
@@ -378,14 +378,14 @@ class Boot(YamlBoot):
             # 获得df
             df_proxy = get_var(table)
             df = df_proxy.df
-            # 将df输出到
+            # 输出df
             #df.write.csv(**option)
             if is_stream:
                 write = df.writeStream
             else:
                 write = df.write
             outputMode = get_and_del_dict_item(option, 'outputMode')
-            # 函数调用，如 csv/json/orc/parquet/text/jdbc
+            # 方法调用，如 csv/json/orc/parquet/text/jdbc
             # 参考 /home/shi/.local/lib/python3.7/site-packages/pyspark/sql/streaming/readwriter.py
             writer = getattr(write, type)(**option)
             if is_stream:
@@ -403,6 +403,34 @@ class Boot(YamlBoot):
             # 存为表
             df.write.saveAsTable(table, **option)
 
+    # 写clickhouse数据, 参考 https://blog.51cto.com/u_16213342/7244059
+    @replace_var_on_params
+    def write_clickhouse(self, config):
+        self.do_write_format("clickhouse", False, config)
+
+    # 执行写数据的格式链式调用
+    def do_write_format(self, format, is_stream, config):
+        for table, option in config.items():
+            # 获得df
+            df_proxy = get_var(table)
+            df = df_proxy.df
+            # 输出df
+            if is_stream:
+                write = df.writeStream
+            else:
+                write = df.write
+            outputMode = get_and_del_dict_item(option, 'outputMode')
+            writer = write.format(format) \
+                .options(option)
+            if is_stream: # 流处理
+                if outputMode is not None:
+                    writer.outputMode(outputMode)
+                self.start_swriter(writer)
+            else: # 批处理
+                writer.mode(outputMode) \
+                    .save()
+
+
     # --- 写流数据，选项都有 checkpointLocation ---
     # 写csv流数据
     @replace_var_on_params
@@ -410,27 +438,32 @@ class Boot(YamlBoot):
         default_options = {
             'header': True
         }
-        self.do_write('csv', True, config, default_options)
+        self.do_write_method('csv', True, config, default_options)
 
     # 写json流数据
     @replace_var_on_params
     def writes_json(self, config):
-        self.do_write('json', True, config)
+        self.do_write_method('json', True, config)
 
     # 写orc流数据
     @replace_var_on_params
     def writes_orc(self, config):
-        self.do_write('orc', True, config)
+        self.do_write_method('orc', True, config)
 
     # 写parquet流数据
     @replace_var_on_params
     def writes_parquet(self, config):
-        self.do_write('parquet', True, config)
+        self.do_write_method('parquet', True, config)
 
     # 写文本流数据
     @replace_var_on_params
     def writes_text(self, config):
-        self.do_write('text', True, config)
+        self.do_write_method('text', True, config)
+
+    # 写clickhouse流数据
+    @replace_var_on_params
+    def writes_clickhouse(self, config):
+        self.do_write_format('clickhouse', True, config)
 
     # 写console流数据
     @replace_var_on_params

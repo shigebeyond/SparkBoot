@@ -1,0 +1,27 @@
+- debug: true # 遇到df就show()
+# 1 初始化spark session
+- init_session:
+    app: test
+    master: local[*]
+    log_level: error # 日志级别
+  set_vars:
+    outdir: ../data # 输出目录
+
+# 2 读clickhouse, 参考 https://blog.51cto.com/u_16213305/7288655
+- read_clickhouse:
+    user:
+      url: jdbc:clickhouse://192.168.62.209:3306/test
+      dbtable: user
+      user: root
+      password: root
+      properties:
+        driver: com.mysql.jdbc.Driver # 需要提前复制好mysql驱动jar，参考pyspark.md
+# 3 写clickhouse, 参考 https://blog.51cto.com/u_16213342/7244059
+- write_clickhouse:
+    user:
+      clickhouse.url: jdbc:clickhouse://localhost:8123/default
+      clickhouse.table: my_table
+      clickhouse.username: my_username
+      clickhouse.password: my_passwor
+      # 模式：append/overwrite/ignore
+      outputMode: overwrite # 覆盖，否则写入报错 PATH_ALREADY_EXISTS
