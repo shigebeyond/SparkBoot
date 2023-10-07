@@ -7,15 +7,15 @@
   set_vars:
     outdir: ../data # 输出目录
 
-# 2 读clickhouse, 参考 https://blog.51cto.com/u_16213305/7288655
+# 2 读clickhouse, 参考 https://blog.51cto.com/u_13146445/6106028
 - read_clickhouse:
     user:
-      url: jdbc:clickhouse://192.168.62.209:3306/test
-      dbtable: user
-      user: root
-      password: root
+      url: jdbc:clickhouse://192.168.62.209:9000/test
+      table: user
       properties:
-        driver: com.mysql.jdbc.Driver # 需要提前复制好mysql驱动jar，参考pyspark.md
+        user: root
+        password: root
+        driver: com.github.housepower.jdbc.ClickHouseDriver # 需要提前复制好clickhouse驱动jar，参考pyspark.md
 # 3 写clickhouse, 参考 https://blog.51cto.com/u_16213342/7244059
 - write_clickhouse:
     user:
