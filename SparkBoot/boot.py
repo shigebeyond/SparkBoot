@@ -403,11 +403,6 @@ class Boot(YamlBoot):
             # 存为表
             df.write.saveAsTable(table, **option)
 
-    # 写clickhouse数据, 参考 https://blog.51cto.com/u_16213342/7244059
-    @replace_var_on_params
-    def write_clickhouse(self, config):
-        self.do_write_format("clickhouse", False, config)
-
     # 执行写数据的格式链式调用
     def do_write_format(self, format, is_stream, config):
         for table, option in config.items():
@@ -460,11 +455,6 @@ class Boot(YamlBoot):
     @replace_var_on_params
     def writes_text(self, config):
         self.do_write_method('text', True, config)
-
-    # 写clickhouse流数据
-    @replace_var_on_params
-    def writes_clickhouse(self, config):
-        self.do_write_format('clickhouse', True, config)
 
     # 写console流数据
     @replace_var_on_params

@@ -7,21 +7,23 @@
   set_vars:
     outdir: ../data # 输出目录
 
-# 2 读clickhouse, 参考 https://blog.51cto.com/u_13146445/6106028
-- read_clickhouse:
+# 2 读clickhouse
+- read_jdbc:
     user:
       url: jdbc:clickhouse://192.168.62.209:9000/test
       table: user
       properties:
         user: root
         password: root
-        driver: com.github.housepower.jdbc.ClickHouseDriver # 需要提前复制好clickhouse驱动jar，参考pyspark.md
-# 3 写clickhouse, 参考 https://blog.51cto.com/u_16213342/7244059
+        # 需要提前复制好clickhouse驱动jar，参考pyspark.md
+        #driver: ru.yandex.clickhouse.ClickHouseDriver
+        driver: com.clickhouse.jdbc.ClickHouseDriver
+# 3 写clickhouse
 - write_clickhouse:
     user:
-      clickhouse.url: jdbc:clickhouse://localhost:8123/default
-      clickhouse.table: my_table
-      clickhouse.username: my_username
-      clickhouse.password: my_passwor
-      # 模式：append/overwrite/ignore
-      mode: append # 覆盖，否则写入报错 PATH_ALREADY_EXISTS
+      url: jdbc:clickhouse://192.168.62.209:9000/test
+      table: user
+      properties:
+        user: root
+        password: root
+        driver: com.clickhouse.jdbc.ClickHouseDriver
