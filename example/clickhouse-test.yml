@@ -1,3 +1,4 @@
+# 准备: clickhouse中要执行clickhouse.sql的语句, 用于建立user/user2表
 - debug: true # 遇到df就show()
 # 1 初始化spark session
 - init_session:
@@ -10,20 +11,21 @@
 # 2 读clickhouse
 - read_jdbc:
     user:
-      url: jdbc:clickhouse://192.168.62.209:9000/test
+      url: jdbc:clickhouse://192.168.62.209:8123/default
       table: user
       properties:
-        user: root
-        password: root
+#        user: default
+#        password: 123456
         # 需要提前复制好clickhouse驱动jar，参考pyspark.md
         #driver: ru.yandex.clickhouse.ClickHouseDriver
         driver: com.clickhouse.jdbc.ClickHouseDriver
 # 3 写clickhouse
-- write_clickhouse:
+- write_jdbc:
     user:
-      url: jdbc:clickhouse://192.168.62.209:9000/test
-      table: user
+      url: jdbc:clickhouse://192.168.62.209:8123/default
+      table: user2
       properties:
-        user: root
-        password: root
+#        user: default
+#        password: 123456
         driver: com.clickhouse.jdbc.ClickHouseDriver
+      mode: append # append/update/complete
