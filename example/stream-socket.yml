@@ -1,9 +1,10 @@
 # 单词统计： https://blog.csdn.net/weixin_46300771/article/details/123364722
+# 命令行输入 nc -lk 9999
 - debug: true # 遇到df就show()
 # 1 初始化spark session
 - init_session:
     app: word-count
-    master: local[*]
+    # master: local[*]
     log_level: error # 日志级别
 # 2 读socket
 - reads_socket: # 字段是value
@@ -11,7 +12,7 @@
 # 3 查sql
 - query_sql:
     words: select explode(split(value," ")) as word, current_timestamp as ts from lines
-    word_count: select word, window(ts, "1 minute") as minute, count(1) as cnt from words group by word, minute
+    word_count: select word, window(ts, "1 minute") as minute, count(1) as cnt from words group by word, minute # 每分钟的单词计数
 # 4 写console
 - writes_console:
     word_count:

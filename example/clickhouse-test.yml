@@ -3,7 +3,7 @@
 # 1 初始化spark session
 - init_session:
     app: test
-    master: local[*]
+    # master: local[*]
     log_level: error # 日志级别
 
 # 2 读clickhouse

@@ -7,7 +7,7 @@
 # 初始化spark session
 - init_session:
     app: sogouq-stat
-    master: local[*]
+    # master: local[*]
     log_level: error # 日志级别
 # 读json
 - persist:

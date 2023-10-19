@@ -7,7 +7,7 @@
 # 初始化spark session
 - init_session:
     app: cache-test
-    master: local[*]
+    # master: local[*]
     log_level: info # 日志级别
 # 读json
 - read_json:

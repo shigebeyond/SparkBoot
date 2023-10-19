@@ -6,7 +6,7 @@
 # 1 初始化spark session
 - init_session:
     app: word-count
-    master: local[*]
+    # master: local[*]
     log_level: error # 日志级别
 # 2 读hdfs
 - read_text: # 字段是value

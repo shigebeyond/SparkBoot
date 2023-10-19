@@ -7,7 +7,7 @@
 # 初始化spark session
 - init_session:
     app: table-test
-    master: local[*]
+    # master: local[*]
     log_level: error # 日志级别
     spark.sql.warehouse.dir: ../data/db # 数据仓库目录=表存储目录
 - if(type=='write'): # 测试写
