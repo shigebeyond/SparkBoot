@@ -1,0 +1,18 @@
+- debug: true # 遇到df就show()
+# 1 初始化spark session
+- init_session:
+    app: test
+    master: local[*]
+    log_level: error # 日志级别
+# 2 读mysql
+- read_jdbc:
+    user:
+      url: jdbc:mysql://192.168.62.209:3306/test
+      table: user
+      properties:
+        user: root
+        password: root
+        driver: com.mysql.jdbc.Driver # 需要提前复制好mysql驱动jar，参考pyspark.md
+# 3 查sql: select udf
+- query_sql:
+    test: select id,add_one(id),add(id,2) from user

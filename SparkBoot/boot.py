@@ -4,12 +4,20 @@ import os
 from shutil import copyfile
 from pyspark.sql import SparkSession, Row, Column
 from pyspark.sql.types import StringType
-from pyspark.sql.functions import split, explode, length
+from pyspark.sql.functions import split, explode, length, udf
 from pyutilb import YamlBoot, SparkDfProxy
 from pyutilb.cmd import *
 from pyutilb.file import *
 from pyutilb.log import log
 from pyutilb.util import *
+
+# udf装饰器
+def udf(func, returnType = StringType()):
+    @wraps(func)
+    def inner_wrapper(*args, **kwargs):
+        func.__dict__['_returnType'] = returnType
+        return func(*args, **kwargs)
+    return inner_wrapper
 
 # spark操作的基于yaml的启动器
 class Boot(YamlBoot):
@@ -70,14 +78,8 @@ class Boot(YamlBoot):
         self.persist_tables = set()
         # 记录stream query
         self.squeries = []
-
-    # 记录要注册的udf
-    udfs = []
-
-    # 记录要注册的udf，要延迟注册
-    @classmethod
-    def register_udf(cls, func, returnType = StringType()):
-        cls.udfs.append((func, returnType))
+        # 记录要注册的udf
+        udfs = {}
 
     # 获得表对应的df
     def get_table_df(self, table):
@@ -99,8 +101,9 @@ class Boot(YamlBoot):
         self.spark = builder.enableHiveSupport().getOrCreate()
         self.spark.sparkContext.setLogLevel(log_level)
         # 注册udf
-        for func, returnType in self.udfs:
-            self.spark.udf.register(func.__name__, func, returnType=returnType)
+        for name, func in self.udfs.items():
+            if not name.startswith('_'): # 非私有函数
+                self.spark.udf.register(name, func) # 注册udf
 
     # 要缓存df
     def cache(self, steps):
@@ -530,6 +533,7 @@ class Boot(YamlBoot):
         copyfile(os.path.join(dir, 'main.py'), os.path.join(output, 'main.py'))
 
         # 2 复制udf文件
+        copyfile(udf_file, os.path.join(output, os.path.basename(udf_file)))
 
         # 3 复制步骤文件
         files = []
@@ -540,15 +544,18 @@ class Boot(YamlBoot):
 
         # 4 生成命令
         files = ','.join(files)
-        cmd = f"#根据真实环境修正master参数\nspark-submit --master local|yarn|spark://127.0.0.1:7077 --driver-memory 1g --executor-memory 1g --files {files} main.py {files}\n"
+        cmd = f'''#根据真实环境修正master参数
+spark-submit --master local|yarn|spark://127.0.0.1:7077 \\
+    --driver-memory 1g \\
+    --executor-memory 1g \\
+    --files {files} \\
+    main.py {files}'''
         if udf_file is not None:
-            cmd = f"{cmd} --py-files {udf_file}"
+            cmd = f'''{cmd} -u {udf_file} \\
+    --py-files {udf_file}'''
         #print("生成提交命令: " + cmd)
         write_file(os.path.join(output, 'submit.sh'), cmd)
         log.info("生成作业文件到目录: " + output)
-
-
-
 
 # cli入口
 def main():
@@ -566,6 +573,9 @@ def main():
         boot.generate_submiting_files(option.output, step_files, option.udf)
         return
     try:
+        # 加载udf函数
+        if option.udf != None:
+            boot.udfs = load_module_funs(option.udf)
         # 执行yaml配置的步骤
         boot.run(step_files)
     except Exception as ex:

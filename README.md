@@ -4,7 +4,7 @@
 
 考虑到部分测试伙伴python能力不足，因此扩展Appium，支持通过yaml配置测试步骤;
 
-## 概述
+## 一、概述
 Spark太复杂了，特别是涉及到scala与python开发，学习与使用成本很高，因此创作了SparkBoot工具，开发人员仅编写yaml与sql即可实现复杂的Spark编程，为其屏蔽了底层开开发细节，减轻了开发难度，让其更专注于大数据分析的逻辑；
 
 框架通过编写简单的yaml, 就可以执行一系列复杂的spark操作步骤, 如读数据/写数据/sql查询/打印变量等，极大的简化了伙伴Spark编程的工作量与工作难度，大幅提高人效；
@@ -13,7 +13,7 @@ Spark太复杂了，特别是涉及到scala与python开发，学习与使用成�
 
 框架提供`include`机制，用来加载并执行其他的步骤yaml，一方面是功能解耦，方便分工，一方面是功能复用，提高效率与质量，从而推进脚本整体的工程化。
 
-## 特性
+## 二、特性
 1. 底层基于 pyspark 库来实现 
 2. 支持通过yaml来配置执行的步骤，简化了生成代码的开发:
 每个步骤可以有多个动作，但单个步骤中动作名不能相同（yaml语法要求）;
@@ -21,7 +21,7 @@ Spark太复杂了，特别是涉及到scala与python开发，学习与使用成�
 3. 支持类似python`for`/`if`/`break`语义的步骤动作，灵活适应各种场景
 4. 支持`include`引用其他的yaml配置文件，以便解耦与复用
 
-## 同类yaml驱动框架
+## 三、同类yaml驱动框架
 [HttpBoot](https://github.com/shigebeyond/HttpBoot)
 [SeleniumBoot](https://github.com/shigebeyond/SeleniumBoot)
 [AppiumBoot](https://github.com/shigebeyond/AppiumBoot)
@@ -29,10 +29,10 @@ Spark太复杂了，特别是涉及到scala与python开发，学习与使用成�
 [MonitorBoot](https://github.com/shigebeyond/MonitorBoot)
 [K8sBoot](https://github.com/shigebeyond/K8sBoot)
 
-## todo
+## 四、todo
 1. 支持更多的动作
 
-## 安装
+## 五、安装
 ```
 pip3 install SparkBoot
 ```
@@ -44,7 +44,8 @@ pip3 install SparkBoot
 export PATH="$PATH:/home/shi/.local/bin"
 ```
 
-## 使用
+## 六、使用
+### 1 本地执行
 ```
 # 以local模式来执行 步骤配置文件中定义的spark作业
 SparkBoot 步骤配置文件.yml
@@ -75,7 +76,13 @@ only showing top 20 rows
 ```
 命令会自动执行`test.yaml`文件中定义的spark任务
 
-## 步骤配置文件及demo
+### 2 集群中执行
+1. 先生成作业文件
+```sh
+SparkBoot udf-test.yml -u udf-test.py -o out
+```
+
+## 七、步骤配置文件及demo
 用于指定多个步骤, 示例见源码 [example](example) 目录下的文件;
 
 顶级的元素是步骤;
@@ -87,7 +94,7 @@ only showing top 20 rows
 1. 简单的单词统计: 详见 [example/word-count.yml](example/word-count.yml)
 2. 复杂的订单统计: 详见 [example/order-stat.yml](example/order-stat.yml)
 
-## 配置详解
+## 八、配置详解
 支持通过yaml来配置执行的步骤;
 
 每个步骤可以有多个动作，但单个步骤中动作名不能相同（yaml语法要求）;
@@ -437,3 +444,47 @@ set_vars:
 ```yaml
 print_vars:
 ```
+
+## 九、UDF 用户定义函数
+1. 定义 UDF: [udf-test.py](example/udf-test.py)
+```python
+from pyspark.sql.functions import udf
+from pyspark.sql.types import *
+
+@udf(returnType=DoubleType())
+def add(m, n):
+    return float(m) + float(n)
+
+@udf(returnType=DoubleType())
+def add_one(a):
+    return float(a) + 1.0
+```
+
+2. 定义步骤文件: [udf-test.yml](example/udf-test.yml)
+```yaml
+- debug: true # 遇到df就show()
+# 1 初始化spark session
+- init_session:
+    app: test
+    master: local[*]
+    log_level: error # 日志级别
+# 2 读mysql
+- read_jdbc:
+    user:
+      url: jdbc:mysql://192.168.62.209:3306/test
+      table: user
+      properties:
+        user: root
+        password: root
+        driver: com.mysql.jdbc.Driver # 需要提前复制好mysql驱动jar，参考pyspark.md
+# 3 查sql: select udf
+- query_sql:
+    test: select id,add_one(id),add(id,2) from user
+```
+
+3. 命令行执行，需用`-u`来指定UDF所在的python文件
+```sh
+SparkBoot udf-test.yml -u udf-test.py
+```
+执行结果如下
+![](img/run-udf.png)

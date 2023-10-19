@@ -1,12 +1,10 @@
-# 准备: clickhouse中要执行clickhouse.sql的语句, 用于建立user/user2表
+# 准备: clickhouse中要执行clickhouse-test.sql的语句, 用于建立user/user2表
 - debug: true # 遇到df就show()
 # 1 初始化spark session
 - init_session:
     app: test
     master: local[*]
     log_level: error # 日志级别
-  set_vars:
-    outdir: ../data # 输出目录
 
 # 2 读clickhouse
 - read_jdbc:
