@@ -51,8 +51,8 @@ export PATH="$PATH:/home/shi/.local/bin"
 SparkBoot 步骤配置文件.yml
 
 # 生成spark作业的相关文件，用于cluster/yarn模式中给spark-submit提交作业
-# 生成文件包含: 1 submit.sh spark-submit的提交作业的命令 2 main.py python入口文件 3 步骤配置文件
-# 提交作业命令如: spark-submit --master spark://192.168.62.209:7077 main.py 步骤配置文件
+# 生成文件包含: 1 submit.sh spark-submit的提交作业的命令 2 run.py python入口文件 3 步骤配置文件
+# 提交作业命令如: spark-submit --master spark://192.168.62.209:7077 run.py 步骤配置文件
 SparkBoot 步骤配置文件.yml  -o 作业文件的生成目录
 ```
 

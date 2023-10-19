@@ -79,7 +79,7 @@ class Boot(YamlBoot):
         # 记录stream query
         self.squeries = []
         # 记录要注册的udf
-        udfs = {}
+        self.udfs = {}
 
     # 获得表对应的df
     def get_table_df(self, table):
@@ -531,9 +531,9 @@ class Boot(YamlBoot):
     def generate_submiting_files(self, output, step_files, udf_file):
         if not os.path.exists(output):
             os.mkdir(output)
-        # 1 生成入口文件main.py
+        # 1 生成入口文件run.py
         dir = os.path.dirname(__file__)
-        copyfile(os.path.join(dir, 'main.py'), os.path.join(output, 'main.py'))
+        copyfile(os.path.join(dir, 'run.py'), os.path.join(output, 'run.py'))
 
         # 2 复制udf文件
         copyfile(udf_file, os.path.join(output, os.path.basename(udf_file)))
@@ -552,7 +552,7 @@ spark-submit --master local|yarn|spark://127.0.0.1:7077 \\
     --driver-memory 1g \\
     --executor-memory 1g \\
     --files {files} \\
-    main.py {files}'''
+    run.py {files}''' # python命令后面不能接spark-submit参数了,它会被认为是python参数
         if udf_file is not None:
             cmd = f'''{cmd} -u {udf_file} \\
     --py-files {udf_file}'''
