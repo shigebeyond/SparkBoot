@@ -536,7 +536,8 @@ class Boot(YamlBoot):
         copyfile(os.path.join(dir, 'run.py'), os.path.join(output, 'run.py'))
 
         # 2 复制udf文件
-        copyfile(udf_file, os.path.join(output, os.path.basename(udf_file)))
+        if udf_file is not None:
+            copyfile(udf_file, os.path.join(output, os.path.basename(udf_file)))
 
         # 3 复制步骤文件
         files = []
@@ -545,20 +546,30 @@ class Boot(YamlBoot):
             files.append(filename)
             copyfile(src, os.path.join(output, filename))
 
-        # 4 生成命令
-        files = ','.join(files)
+        # 4 生成提交命令
+        cmd = self.build_submit_cmd(files, udf_file)
+        #print("生成提交命令: " + cmd)
+        write_file(os.path.join(output, 'submit.sh'), cmd)
+        log.info("生成作业文件到目录: " + output)
+
+    # 构建提交命令
+    def build_submit_cmd(self, step_files, udf_file):
+        # 收集所有要提交的文件: yarn需指定; standard不需要, standard是立马解析python并执行java dag action, 因此不需要提交文件
+        files = ['run.py'] + step_files
+        if udf_file is not None:
+            files.append(udf_file)
+        # 收集SparkBoot命令参数
+        params = step_files
+        if udf_file is not None:
+            params += ['-u', udf_file]
+        # 提交命令
         cmd = f'''#根据真实环境修正master参数
 spark-submit --master local|yarn|spark://127.0.0.1:7077 \\
     --driver-memory 1g \\
     --executor-memory 1g \\
-    --files {files} \\
-    run.py {files}''' # python命令后面不能接spark-submit参数了,它会被认为是python参数
-        if udf_file is not None:
-            cmd = f'''{cmd} -u {udf_file} \\
-    --py-files {udf_file}'''
-        #print("生成提交命令: " + cmd)
-        write_file(os.path.join(output, 'submit.sh'), cmd)
-        log.info("生成作业文件到目录: " + output)
+    --files {','.join(files)} \\
+    run.py {' '.join(params)}'''  # python命令后面不能接spark-submit参数了,它会被认为是python参数
+        return cmd
 
 # cli入口
 def main():

@@ -77,10 +77,22 @@ only showing top 20 rows
 命令会自动执行`test.yaml`文件中定义的spark任务
 
 ### 2 集群中执行
-1. 先生成作业文件
+1. 生成作业文件
 ```sh
-SparkBoot udf-test.yml -u udf-test.py -o out
+SparkBoot udf-test.yml -u udf-test.py -o gen
 ```
+生成文件如下
+```
+shi@shi-PC:[~/code/python/SparkBoot/example]: tree gen
+gen
+├── run.py -- python入口文件
+├── submit.sh -- 提交命令，其中master要根据实际情况调整
+├── udf-test.py -- udf定义文件
+└── udf-test.yml -- 步骤配置文件
+```
+
+2. 将生成文件目录上传到spark master节点
+3. 执行 `submit.sh` 来提交作业
 
 ## 七、步骤配置文件及demo
 用于指定多个步骤, 示例见源码 [example](example) 目录下的文件;
