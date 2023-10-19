@@ -97,7 +97,10 @@ class Boot(YamlBoot):
         builder = SparkSession.builder.appName(app)
         if master is not None:
             builder.master(master)
-        builder.config(map = config) # 应用其他配置
+        # 应用其他配置
+        # builder.config(map = config) # pyspark3.4支持map参数, 3.2不支持
+        for k,v in config.items():
+            builder.config(k, v)
         self.spark = builder.enableHiveSupport().getOrCreate()
         self.spark.sparkContext.setLogLevel(log_level)
         # 注册udf
