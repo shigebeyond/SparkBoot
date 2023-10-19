@@ -19,7 +19,8 @@ Spark太复杂了，特别是涉及到scala与python开发，学习与使用成�
 每个步骤可以有多个动作，但单个步骤中动作名不能相同（yaml语法要求）;
 动作代表spark上的一种操作，如read_csv/query_sql等等;
 3. 支持类似python`for`/`if`/`break`语义的步骤动作，灵活适应各种场景
-4. 支持`include`引用其他的yaml配置文件，以便解耦与复用
+4. 支持`include`引用其他的yaml配置文件，以便解耦与复用;
+5. 支持用`schedule`动作来实现定时处理.
 
 ## 三、同类yaml驱动框架
 [HttpBoot](https://github.com/shigebeyond/HttpBoot)
@@ -120,7 +121,7 @@ gen
 ```yaml
 - init_session:
     app: test
-    master: local[*] # master: 对local仅在本地调试时使用，如果是在集群中运行，则需要删掉本行，并在spark-submit命令中指定master
+    #master: local[*] # master: 对local仅在本地调试时使用，如果是在集群中运行，则需要删掉本行，并在spark-submit命令中指定master
     log_level: error # 日志级别
 ```
 
@@ -254,7 +255,15 @@ reads_text:
 ```
 
 ### 5 写批数据的动作
-18. write_csv: 写csv数据
+18. write_console: 将数据写到控制台
+```yaml
+write_console:
+  # key是表名, value是参数
+  user:
+    mode: complete # append/update/complete
+```
+
+19. write_csv: 写csv数据
 ```yaml
 write_csv:
     # key是表名, value是csv文件路径
@@ -267,35 +276,35 @@ write_csv:
       #compression: none # 不压缩
 ```
 
-19. write_json: 写json数据
+20. write_json: 写json数据
 ```yaml
 write_json:
     # key是表名, value是json文件路径
     user: /data/output/user.json
 ```
 
-20. write_orc: 写orc数据
+21. write_orc: 写orc数据
 ```yaml
 write_orc:
     # key是表名, value是orc文件路径
     user: /data/output/user.orc
 ```
 
-21. write_parquet: 写parquet数据
+22. write_parquet: 写parquet数据
 ```yaml
 write_parquet:
     # key是表名, value是parquet文件路径
     user: /data/output/user.parquet
 ```
 
-22. write_text: 写文本数据
+23. write_text: 写文本数据
 ```yaml
 write_text:
     # key是表名, value是文本文件路径
     user: /data/output/user.txt
 ```
 
-23. write_jdbc: 写jdbc数据
+24. write_jdbc: 写jdbc数据
 ```yaml
 write_jdbc:
     # key是表名, value是jdbc连接配置
@@ -309,7 +318,7 @@ write_jdbc:
 ```
 
 ### 6 写流数据的动作
-24. writes_console: 将流数据写到控制台
+25. writes_console: 将流数据写到控制台
 ```yaml
 writes_console:
   # key是表名, value是参数
@@ -317,7 +326,18 @@ writes_console:
     checkpointLocation: path/to/checkpoint/dir
     outputMode: complete # append/update/complete
 ```
-25. writes_kafka: 写kafka流数据
+
+26. writes_mem: 将流数据写到内存表中
+```yaml
+writes_mem:
+  # key是表名, value是参数
+  user:
+    checkpointLocation: path/to/checkpoint/dir
+    outputMode: complete # append/update/complete
+    queryName: tmp_user # 内存表名
+```
+
+27. writes_kafka: 写kafka流数据
 ```yaml
 writes_kafka:
   # key是表名, value是kafka brokers+topic
@@ -328,7 +348,7 @@ writes_kafka:
     outputMode: complete # append/update/complete
 ```
 
-26. writes_csv: 写csv数据
+28. writes_csv: 写csv数据
 ```yaml
 writes_csv:
     # key是表名, value是文本文件路径
@@ -340,7 +360,7 @@ writes_csv:
       outputMode: complete # append/update/complete
 ```
 
-27. writes_json: 写json数据
+29. writes_json: 写json数据
 ```yaml
 writes_json:
     # key是表名, value是json文件路径
@@ -350,7 +370,7 @@ writes_json:
       outputMode: complete # append/update/complete
 ```
 
-28. writes_orc: 写orc数据
+30. writes_orc: 写orc数据
 ```yaml
 writes_orc:
     # key是表名, value是orc文件路径
@@ -360,7 +380,7 @@ writes_orc:
       outputMode: complete # append/update/complete
 ```
 
-29. writes_parquet: 写parquet数据
+31. writes_parquet: 写parquet数据
 ```yaml
 writes_parquet:
     # key是表名, value是parquet文件路径
@@ -370,7 +390,7 @@ writes_parquet:
       outputMode: complete # append/update/complete
 ```
 
-30. writes_text: 写文本数据
+32. writes_text: 写文本数据
 ```yaml
 writes_text:
   # key是表名, value是文本文件路径
@@ -381,13 +401,13 @@ writes_text:
 ```
 
 ### 7 其他动作
-31. print: 打印, 支持输出变量/函数;
+33. print: 打印, 支持输出变量/函数;
 ```yaml
 # 调试打印
 print: "总申请数=${dyn_data.total_apply}, 剩余份数=${dyn_data.quantity_remain}"
 ```
 
-32. for: 循环;
+34. for: 循环;
     for动作下包含一系列子步骤，表示循环执行这系列子步骤；变量`for_i`记录是第几次迭代（从1开始）,变量`for_v`记录是每次迭代的元素值（仅当是list类型的变量迭代时有效）
 ```yaml
 # 循环3次
@@ -408,7 +428,7 @@ for:
     switch_sheet: test
 ```
 
-33. once: 只执行一次，等价于 `for(1)`;
+35. once: 只执行一次，等价于 `for(1)`;
     once 结合 moveon_if，可以模拟 python 的 `if` 语法效果
 ```yaml
 once:
@@ -417,19 +437,19 @@ once:
     switch_sheet: test
 ```
 
-34. break_if: 满足条件则跳出循环;
+36. break_if: 满足条件则跳出循环;
     只能定义在for/once循环的子步骤中
 ```yaml
 break_if: for_i>2 # 条件表达式，python语法
 ```
 
-35. moveon_if: 满足条件则往下走，否则跳出循环;
+37. moveon_if: 满足条件则往下走，否则跳出循环;
     只能定义在for/once循环的子步骤中
 ```yaml
 moveon_if: for_i<=2 # 条件表达式，python语法
 ```
 
-36. if/else: 满足条件则执行if分支，否则执行else分支
+38. if/else: 满足条件则执行if分支，否则执行else分支
 ```yaml
 - set_vars:
     txt: '进入首页'
@@ -439,12 +459,12 @@ moveon_if: for_i<=2 # 条件表达式，python语法
     - print: '----- 执行else -----'
 ```
 
-37. include: 包含其他步骤文件，如记录公共的步骤，或记录配置数据(如用户名密码);
+39. include: 包含其他步骤文件，如记录公共的步骤，或记录配置数据(如用户名密码);
 ```yaml
 include: part-common.yml
 ```
 
-38. set_vars: 设置变量;
+40. set_vars: 设置变量;
 ```yaml
 set_vars:
   name: shi
@@ -452,9 +472,17 @@ set_vars:
   birthday: 5-27
 ```
 
-39. print_vars: 打印所有变量;
+41. print_vars: 打印所有变量;
 ```yaml
 print_vars:
+```
+
+42. schedule: 定时处理，就是每隔指定秒数就执行下子步骤，如定时将流处理结果输出
+```yaml
+# 定时处理
+- schedule(5): # 每隔5秒 
+    # 执行子步骤
+    - print: '每隔5s触发: ${now()}'
 ```
 
 ## 九、UDF 用户定义函数
@@ -478,7 +506,7 @@ def add_one(a):
 # 1 初始化spark session
 - init_session:
     app: test
-    master: local[*]
+    #master: local[*]
     log_level: error # 日志级别
 # 2 读mysql
 - read_jdbc:
@@ -499,4 +527,5 @@ def add_one(a):
 SparkBoot udf-test.yml -u udf-test.py
 ```
 执行结果如下
+
 ![](img/run-udf.png)

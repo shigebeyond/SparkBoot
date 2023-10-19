@@ -8,6 +8,7 @@ from pyspark.sql.functions import split, explode, length, udf
 from pyutilb import YamlBoot, SparkDfProxy
 from pyutilb.cmd import *
 from pyutilb.file import *
+from pyutilb.lazy import lazyproperty
 from pyutilb.log import log
 from pyutilb.util import *
 
@@ -57,6 +58,7 @@ class Boot(YamlBoot):
             'write_text': self.write_text,
             'write_jdbc': self.write_jdbc,
             'write_table': self.write_table,
+            'write_console': self.write_console,
             # 写流数据动作
             'writes_csv': self.writes_csv,
             'writes_json': self.writes_json,
@@ -65,6 +67,9 @@ class Boot(YamlBoot):
             'writes_text': self.writes_text,
             'writes_console': self.writes_console,
             'writes_kafka': self.writes_kafka,
+            'writes_mem': self.writes_mem,
+            # 定时器动作
+            'schedule': self.schedule,
         }
         self.add_actions(actions)
         # 不统计: 因yaml.dump()涉及到spark df就报错
@@ -85,7 +90,7 @@ class Boot(YamlBoot):
     def get_table_df(self, table):
         return self.spark.table(table)
 
-    # --------- 动作处理的函数 --------
+    # ------------------ 动作处理的函数 ------------------
     # 初始化spark session
     @replace_var_on_params
     def init_session(self, config):
@@ -180,7 +185,7 @@ class Boot(YamlBoot):
 
         return df
 
-    # --- 读数据 ---
+    # ------------------ 读批数据动作 ------------------
     # 读csv数据
     @replace_var_on_params
     def read_csv(self, config):
@@ -231,6 +236,7 @@ class Boot(YamlBoot):
     # 执行读数据
     def do_read(self, type, is_stream, config, default_options = None):
         for table, option in config.items():
+            option = self.fix_option(option)
             # 修正read_csv()的参数
             if type == 'csv':
                 if 'sep' in option and option['sep'] == '\\t':
@@ -266,7 +272,12 @@ class Boot(YamlBoot):
             # 加载df后的处理
             df = self.on_load_df(df, table)
 
-    # --- 读流数据 ---
+    def fix_option(self, option):
+        if option is None or option == '':
+            option = {}
+        return option
+
+    # ------------------ 读流数据动作 ------------------
     # 读csv流数据
     @replace_var_on_params
     def reads_csv(self, config):
@@ -314,6 +325,7 @@ class Boot(YamlBoot):
     @replace_var_on_params
     def reads_rate(self, config):
         for table, option in config.items():
+            option = self.fix_option(option)
             # Create DataFrame representing the stream of input lines from rate
             # 选项 rowsPerSecond
             if not isinstance(option, dict):
@@ -330,6 +342,7 @@ class Boot(YamlBoot):
     @replace_var_on_params
     def reads_kafka(self, config):
         for table, option in config.items():
+            option = self.fix_option(option)
             # Create DataFrame representing the stream of input lines from kafka
             df = self.spark.readStream \
                 .format("kafka") \
@@ -340,7 +353,7 @@ class Boot(YamlBoot):
             # 加载df后的处理
             self.on_load_df(df, table)
 
-    # --- 写数据 ---
+    # ------------------ 写批数据动作 ------------------
     # 写csv数据
     @replace_var_on_params
     def write_csv(self, config):
@@ -374,9 +387,15 @@ class Boot(YamlBoot):
     def write_jdbc(self, config):
         self.do_write_method('jdbc', False, config)
 
+    # 写console数据
+    @replace_var_on_params
+    def write_console(self, config):
+        self.do_write_format("console", False, config)
+
     # 执行写数据的方法
     def do_write_method(self, type, is_stream, config, default_options = None):
         for table, option in config.items():
+            option = self.fix_option(option)
             if isinstance(option, str): # 路径
                 option = {'path': option}
             if default_options:
@@ -403,6 +422,7 @@ class Boot(YamlBoot):
     @replace_var_on_params
     def write_table(self, config):
         for table, option in config.items():
+            option = self.fix_option(option)
             # 获得df
             df_proxy = get_var(table)
             df = df_proxy.df
@@ -412,6 +432,7 @@ class Boot(YamlBoot):
     # 执行写数据的格式链式调用
     def do_write_format(self, format, is_stream, config):
         for table, option in config.items():
+            option = self.fix_option(option)
             # 获得df
             df_proxy = get_var(table)
             df = df_proxy.df
@@ -423,7 +444,7 @@ class Boot(YamlBoot):
                 write = df.write
                 outputMode = get_and_del_dict_item(option, 'mode')
             writer = write.format(format) \
-                .options(option)
+                .options(**option)
             if is_stream: # 流处理
                 if outputMode is not None:
                     writer.outputMode(outputMode)
@@ -432,8 +453,7 @@ class Boot(YamlBoot):
                 writer.mode(outputMode) \
                     .save()
 
-
-    # --- 写流数据，选项都有 checkpointLocation ---
+    # ------------------ 写流数据，选项都有 checkpointLocation ------------------
     # 写csv流数据
     @replace_var_on_params
     def writes_csv(self, config):
@@ -465,20 +485,13 @@ class Boot(YamlBoot):
     # 写console流数据
     @replace_var_on_params
     def writes_console(self, config):
-        for table, option in config.items():
-            # 获得df
-            df_proxy = get_var(table)
-            df = df_proxy.df
-            swriter = df.writeStream \
-                .format("console") \
-                .outputMode(get_and_del_dict_item(option, 'outputMode')) \
-                .options(**option)
-            self.start_swriter(swriter)
+        self.do_write_format("console", True, config)
 
     # 写kafka流数据
     @replace_var_on_params
     def writes_kafka(self, config):
         for table, option in config.items():
+            option = self.fix_option(option)
             # 获得df
             df_proxy = get_var(table)
             df = df_proxy.df
@@ -490,21 +503,28 @@ class Boot(YamlBoot):
                 .options(**option)
             self.start_swriter(swriter)
 
-    '''
-    # 写memory流数据
+    # 写memory流数据，相当于将即时流数据记录到临时内存表中
     @replace_var_on_params
-    def writes_memory(self, config):
+    def writes_mem(self, config):
         for table, option in config.items():
+            option = self.fix_option(option)
             # 获得df
             df_proxy = get_var(table)
             df = df_proxy.df
+            # 写内存表
+            table2 = get_and_del_dict_item(option, 'queryName')
+            if not table2:
+                raise Exception('writes_mem()动作缺少queryName选项')
             swriter = df.writeStream \
                 .format("memory") \
                 .outputMode(get_and_del_dict_item(option, 'outputMode')) \
-                .options(**option) \
-                .queryName(?)
+                .queryName(table2) \
+                .options(**option)
             self.start_swriter(swriter)
-    '''
+            # 获得spark sql中table的df
+            df = self.get_table_df(table2)
+            # 设为变量
+            set_var(table2, SparkDfProxy(df))
 
     # 启动流writer
     def start_swriter(self, swriter):
@@ -526,7 +546,33 @@ class Boot(YamlBoot):
                 df = df_proxy.df
                 df.unpersist()
 
-    # --- 生成作业文件 ---
+    # ------------------ 定时器动作 ------------------
+    @lazyproperty
+    def asyncio_apscheduler_thread(self):
+        from pyutilb import SchedulerThread # fix 循环引用，直接放在方法里
+        return SchedulerThread() # 定时器的线程
+
+    def schedule(self, steps, wait_seconds):
+        '''
+        定时器
+        :param steps: 每次定时要执行的步骤
+        :param wait_seconds: 时间间隔,单位秒
+        :return:
+        '''
+        self.asyncio_apscheduler_thread.add_job(self.run_steps_async, 'interval', args=(steps, get_vars()), seconds=int(wait_seconds))
+
+    def run_steps_async(self, steps, vars = {}):
+        '''
+        异步执行步骤
+        :param steps: 要执行的步骤
+        :param vars: 传递调用线程中的变量
+        :return:
+        '''
+        # 应用变量，因为变量是在ThreadLocal中，只能在同步代码中应用
+        with UseVars(vars):
+            self.run_steps(steps)
+
+    # ------------------ 生成作业文件动作 ------------------
     # 生成要提交的作业文件+命令
     def generate_submiting_files(self, output, step_files, udf_file):
         if not os.path.exists(output):
