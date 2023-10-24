@@ -2,7 +2,7 @@
 - debug: true # 遇到df就show()
   set_vars:
     hdfs_host: ../data
-    #hdfs_host: hdfs://192.168.62.160:9000
+    #hdfs_host: hdfs://192.168.61.18:9000
 # 1 初始化spark session
 - init_session:
     app: word-count

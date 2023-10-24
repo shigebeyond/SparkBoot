@@ -9,7 +9,7 @@
 # 2 读clickhouse
 - read_jdbc:
     user:
-      url: jdbc:clickhouse://192.168.62.209:8123/default
+      url: jdbc:clickhouse://192.168.61.14:8123/default
       table: user
       properties:
 #        user: default
@@ -20,7 +20,7 @@
 # 3 写clickhouse
 - write_jdbc:
     user:
-      url: jdbc:clickhouse://192.168.62.209:8123/default
+      url: jdbc:clickhouse://192.168.61.14:8123/default
       table: user2
       properties:
 #        user: default

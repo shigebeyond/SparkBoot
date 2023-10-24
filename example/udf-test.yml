@@ -7,7 +7,7 @@
 # 2 读mysql
 - read_jdbc:
     user:
-      url: jdbc:mysql://192.168.62.209:3306/test
+      url: jdbc:mysql://192.168.61.14:3306/test
       table: user
       properties:
         user: root

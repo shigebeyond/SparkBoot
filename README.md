@@ -400,14 +400,40 @@ writes_text:
       outputMode: complete # append/update/complete
 ```
 
-### 7 其他动作
-33. print: 打印, 支持输出变量/函数;
+### 7 表相关动作
+33. list_tables: 列出所有表
+```yaml
+list_tables: 
+```
+
+34. drop_table:  删除单个表
+```yaml
+drop_table: user # 删除表user
+```
+
+### 8 缓存相关动作
+35. cache: 对子动作中产生的表进行缓存 
+```yaml
+- cache:
+  - query_sql:
+      my_order: select storeProvince,storeID,receivable,dateTS,payType from order where storeProvince != 'null' and receivable > 1000 # 读源文件 minimini.json
+```
+
+36. cache: 对子动作中产生的表进行存储
+```yaml
+- persist:
+  - query_sql:
+      top3_province_order: select my_order.* from my_order join top3_provinces where my_order.storeProvince = top3_provinces.storeProvince
+```
+
+### 9 其他动作
+37. print: 打印, 支持输出变量/函数;
 ```yaml
 # 调试打印
 print: "总申请数=${dyn_data.total_apply}, 剩余份数=${dyn_data.quantity_remain}"
 ```
 
-34. for: 循环;
+38. for: 循环;
     for动作下包含一系列子步骤，表示循环执行这系列子步骤；变量`for_i`记录是第几次迭代（从1开始）,变量`for_v`记录是每次迭代的元素值（仅当是list类型的变量迭代时有效）
 ```yaml
 # 循环3次
@@ -428,7 +454,7 @@ for:
     switch_sheet: test
 ```
 
-35. once: 只执行一次，等价于 `for(1)`;
+39. once: 只执行一次，等价于 `for(1)`;
     once 结合 moveon_if，可以模拟 python 的 `if` 语法效果
 ```yaml
 once:
@@ -437,19 +463,19 @@ once:
     switch_sheet: test
 ```
 
-36. break_if: 满足条件则跳出循环;
+40. break_if: 满足条件则跳出循环;
     只能定义在for/once循环的子步骤中
 ```yaml
 break_if: for_i>2 # 条件表达式，python语法
 ```
 
-37. moveon_if: 满足条件则往下走，否则跳出循环;
+41. moveon_if: 满足条件则往下走，否则跳出循环;
     只能定义在for/once循环的子步骤中
 ```yaml
 moveon_if: for_i<=2 # 条件表达式，python语法
 ```
 
-38. if/else: 满足条件则执行if分支，否则执行else分支
+42. if/else: 满足条件则执行if分支，否则执行else分支
 ```yaml
 - set_vars:
     txt: '进入首页'
@@ -459,12 +485,12 @@ moveon_if: for_i<=2 # 条件表达式，python语法
     - print: '----- 执行else -----'
 ```
 
-39. include: 包含其他步骤文件，如记录公共的步骤，或记录配置数据(如用户名密码);
+43. include: 包含其他步骤文件，如记录公共的步骤，或记录配置数据(如用户名密码);
 ```yaml
 include: part-common.yml
 ```
 
-40. set_vars: 设置变量;
+44. set_vars: 设置变量;
 ```yaml
 set_vars:
   name: shi
@@ -472,12 +498,12 @@ set_vars:
   birthday: 5-27
 ```
 
-41. print_vars: 打印所有变量;
+45. print_vars: 打印所有变量;
 ```yaml
 print_vars:
 ```
 
-42. schedule: 定时处理，就是每隔指定秒数就执行下子步骤，如定时将流处理结果输出
+46. schedule: 定时处理，就是每隔指定秒数就执行下子步骤，如定时将流处理结果输出
 ```yaml
 # 定时处理
 - schedule(5): # 每隔5秒 
