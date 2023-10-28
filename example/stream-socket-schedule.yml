@@ -13,7 +13,7 @@
 - query_sql:
     words: select explode(split(value," ")) as word, current_timestamp as ts from lines
     word_count: select word, count(1) as cnt from words group by word # 所有单词计数
-# 4 写内存表, 表名为@word_count
+# 4 写内存表, 表名为tmp_word_count
 - writes_mem:
     word_count:
         outputMode: complete # append/update/complete

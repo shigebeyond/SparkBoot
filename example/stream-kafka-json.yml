@@ -1,0 +1,23 @@
+# 需要提前复制好mysql驱动jar，参考pyspark.md
+# 发消息命令 kafka-console-producer.sh --bootstrap-server localhost:9092 --topic lines
+# 输入 { "name": "shi", "age": 30 }
+- debug: true # 遇到df就show()
+# 1 初始化spark session
+- init_session:
+    app: word-count
+    # master: local[*]
+    log_level: error # 日志级别
+# 2 读kafka
+- reads_kafka: # 字段是value
+    lines:
+        brokers: localhost:9092 # 多个用逗号分割
+        topic: lines
+        startingOffsets: earliest
+# 3 查sql
+- query_sql:
+    objs: select from_json(CAST(value AS STRING), 'name STRING, age INT') as obj from lines
+    men: select obj.name as name, obj.age as age from objs
+# 4 写console
+- writes_console:
+    men:
+        outputMode: append # append/update/complete

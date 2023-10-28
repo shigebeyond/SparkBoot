@@ -1,0 +1,13 @@
+- debug: true # 遇到df就show()
+# 1 初始化spark session
+- init_session:
+    app: test
+    # master: local[*]
+    log_level: error # 日志级别
+# 2 解析json
+- query_sql:
+    test: SELECT from_json('{"name":"shi", "age":30}', 'name STRING, age INT') as obj
+# 3 展平json对象
+- query_sql:
+    test2: select obj.name as name, obj.age as age from test
+

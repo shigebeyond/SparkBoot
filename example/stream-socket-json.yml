@@ -1,0 +1,20 @@
+# 从流中读json
+# 命令行输入 nc -lk 9999
+# 输入 { "name": "shi", "age": 30 }
+- debug: true # 遇到df就show()
+# 1 初始化spark session
+- init_session:
+    app: word-count
+    # master: local[*]
+    log_level: error # 日志级别
+# 2 读socket
+- reads_socket: # 字段是value
+    lines: localhost:9999
+# 3 查sql
+- query_sql:
+    objs: select from_json(value, 'name STRING, age INT') as obj from lines
+    men: select obj.name as name, obj.age as age from objs
+# 4 写console
+- writes_console:
+    men:
+        outputMode: append # append/update/complete

@@ -247,8 +247,6 @@ class Boot(YamlBoot):
                 sep = get_and_del_dict_item(option, 'split')
                 if sep == '\\t':
                     sep = '\t'
-            if not option:
-                option = {}
             if isinstance(option, str): # 路径
                 if type == 'text':
                     key = 'paths'
@@ -257,6 +255,12 @@ class Boot(YamlBoot):
                 option = {key: option}
             if type == 'text' and 'paths' not in option:
                 option['paths'] = get_and_del_dict_item(option, 'path')
+            # 修正read_json()的参数
+            if (not is_stream) and type == 'json' and 'table' in option: # json支持读rdd(表)
+                table = get_and_del_dict_item(option, 'table')
+                df_proxy = get_var(table)
+                df = df_proxy.df
+                option['path'] = df
             if default_options:
                 option = {**default_options, **option}
             # 加载数据到df
