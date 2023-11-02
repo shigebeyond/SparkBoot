@@ -1,0 +1,23 @@
+# 准备: clickhouse中要执行clickhouse-test.sql的语句, 用于建立user/user2表
+- debug: true # 遇到df就show()
+# 1 初始化spark session
+- init_session:
+    app: test
+    # master: local[*]
+    log_level: error # 日志级别
+    # cassandra连接配置
+    spark.cassandra.connection.host: your_cassandra_host
+    spark.cassandra.auth.username: your_username
+    spark.cassandra.auth.password: your_password
+
+# 2 读cassandra
+- read_cassandra:
+    user:
+      keyspace: default
+      table: user
+    
+# 3 写cassandra
+- write_cassandra:
+    user:
+      keyspace: default
+      table: user2

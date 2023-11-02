@@ -412,6 +412,7 @@ class Boot(YamlBoot):
             if is_stream:
                 write = df.writeStream
                 outputMode = get_and_del_dict_item(option, 'outputMode')
+                trigger = get_and_del_dict_item(option, 'trigger')
             else:
                 write = df.write
             # 方法调用，如 csv/json/orc/parquet/text/jdbc
@@ -420,7 +421,19 @@ class Boot(YamlBoot):
             if is_stream:
                 if outputMode is not None:
                     writer.outputMode(outputMode)
+                self.set_write_trigger(writer, trigger)
                 self.start_swriter(writer)
+
+    # 设置定时触发
+    def set_write_trigger(self, writer, trigger):
+        if trigger is not None:
+            if not isinstance(trigger, dict):  # 间隔时间
+                if isinstance(trigger, int): # 秒
+                    processingTime = f"{trigger} seconds"
+                else:
+                    processingTime = str(trigger)
+                trigger = {'processingTime': processingTime}
+            writer.trigger(**trigger)
 
     # 写table数据
     @replace_var_on_params
@@ -444,6 +457,7 @@ class Boot(YamlBoot):
             if is_stream:
                 write = df.writeStream
                 outputMode = get_and_del_dict_item(option, 'outputMode')
+                trigger = get_and_del_dict_item(option, 'trigger')
             else:
                 write = df.write
                 outputMode = get_and_del_dict_item(option, 'mode')
@@ -452,6 +466,7 @@ class Boot(YamlBoot):
             if is_stream: # 流处理
                 if outputMode is not None:
                     writer.outputMode(outputMode)
+                self.set_write_trigger(writer, trigger)
                 self.start_swriter(writer)
             else: # 批处理
                 writer.mode(outputMode) \

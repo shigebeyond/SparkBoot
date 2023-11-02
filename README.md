@@ -325,6 +325,7 @@ writes_console:
   user:
     checkpointLocation: path/to/checkpoint/dir
     outputMode: complete # append/update/complete
+    #trigger: 5 # 定时写的时间间隔，接收int(如5表示5秒)或str(如5 seconds)
 ```
 
 26. writes_mem: 将流数据写到内存表中
@@ -334,6 +335,7 @@ writes_mem:
   user:
     checkpointLocation: path/to/checkpoint/dir
     outputMode: complete # append/update/complete
+    #trigger: 5 # 定时写的时间间隔，接收int(如5表示5秒)或str(如5 seconds)
     queryName: tmp_user # 内存表名
 ```
 
@@ -346,6 +348,7 @@ writes_kafka:
     topic: test
     checkpointLocation: path/to/checkpoint/dir
     outputMode: complete # append/update/complete
+    #trigger: 5 # 定时写的时间间隔，接收int(如5表示5秒)或str(如5 seconds)
 ```
 
 28. writes_csv: 写csv数据
@@ -358,6 +361,7 @@ writes_csv:
       #compression: none # 不压缩
       checkpointLocation: path/to/checkpoint/dir
       outputMode: complete # append/update/complete
+      #trigger: 5 # 定时写的时间间隔，接收int(如5表示5秒)或str(如5 seconds)
 ```
 
 29. writes_json: 写json数据
@@ -368,6 +372,7 @@ writes_json:
       path: /data/output/user.json
       checkpointLocation: path/to/checkpoint/dir
       outputMode: complete # append/update/complete
+      #trigger: 5 # 定时写的时间间隔，接收int(如5表示5秒)或str(如5 seconds)
 ```
 
 30. writes_orc: 写orc数据
@@ -378,6 +383,7 @@ writes_orc:
       path: /data/output/user.orc
       checkpointLocation: path/to/checkpoint/dir
       outputMode: complete # append/update/complete
+      #trigger: 5 # 定时写的时间间隔，接收int(如5表示5秒)或str(如5 seconds)
 ```
 
 31. writes_parquet: 写parquet数据
@@ -388,6 +394,7 @@ writes_parquet:
       path: /data/output/user.parquet
       checkpointLocation: path/to/checkpoint/dir
       outputMode: complete # append/update/complete
+      #trigger: 5 # 定时写的时间间隔，接收int(如5表示5秒)或str(如5 seconds)
 ```
 
 32. writes_text: 写文本数据
@@ -398,6 +405,7 @@ writes_text:
       path: /data/output/user.txt
       checkpointLocation: path/to/checkpoint/dir
       outputMode: complete # append/update/complete
+      #trigger: 5 # 定时写的时间间隔，接收int(如5表示5秒)或str(如5 seconds)
 ```
 
 ### 7 表相关动作
