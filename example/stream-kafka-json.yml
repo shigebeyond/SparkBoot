@@ -15,8 +15,9 @@
         startingOffsets: earliest
 # 3 查sql
 - query_sql:
-    objs: select from_json(CAST(value AS STRING), 'name STRING, age INT') as obj from lines
-    men: select obj.name as name, obj.age as age from objs
+    objs: select from_json(CAST(value AS STRING), 'name STRING, age INT') as obj from lines # 对每行解析json
+    men: select obj.name as name, obj.age as age from objs # 展平json对象的属性
+    #men: select explode(obj.*) from objs # 展平json对象的属性
 # 4 写console
 - writes_console:
     men:
